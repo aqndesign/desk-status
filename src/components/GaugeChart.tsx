@@ -45,8 +45,9 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
   const cy = CHART_HEIGHT;
 
   const thresholdAngle = daysToAngle(thresholdDays, totalDays);
-  const tickInner = polarXY(cx, cy, R - arcWidth - 5, thresholdAngle);
-  const tickOuter = polarXY(cx, cy, R + 5, thresholdAngle);
+  // Span from just inside the inner arc edge to just outside the outer edge
+  const tickInner = polarXY(cx, cy, R - arcWidth - 8, thresholdAngle);
+  const tickOuter = polarXY(cx, cy, R + 8, thresholdAngle);
   const labelPt = polarXY(cx, cy, R + 22, thresholdAngle);
 
   const fillColor = qualified ? '#16A34A' : '#EA580C';
@@ -98,31 +99,24 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
           {totalDays}
         </text>
 
-        {/* Threshold tick — white radial notch across the arc */}
+        {/* Threshold tick — spans the full arc width with a white halo for contrast on any arc color */}
         <line
           x1={tickInner.x.toFixed(1)} y1={tickInner.y.toFixed(1)}
           x2={tickOuter.x.toFixed(1)} y2={tickOuter.y.toFixed(1)}
-          stroke="white" strokeWidth="3" strokeLinecap="round"
+          stroke="white" strokeWidth="7" strokeLinecap="round"
         />
-
-        {/* Threshold label */}
-        <text
-          x={labelPt.x.toFixed(1)} y={(labelPt.y - 5).toFixed(1)}
-          textAnchor="middle"
-          fill="#475569" fontSize="11" fontWeight="600"
-          fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
-        >
-          {thresholdDays} days
-        </text>
-        <text
-          x={labelPt.x.toFixed(1)} y={(labelPt.y + 8).toFixed(1)}
-          textAnchor="middle"
-          fill="#94A3B8" fontSize="10"
-          fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
-        >
-          minimum
-        </text>
+        <line
+          x1={tickInner.x.toFixed(1)} y1={tickInner.y.toFixed(1)}
+          x2={tickOuter.x.toFixed(1)} y2={tickOuter.y.toFixed(1)}
+          stroke="#1E293B" strokeWidth="3" strokeLinecap="round"
+        />
       </svg>
+
+      {/* Minimum label below gauge */}
+      <div className="ds-gauge-minimum">
+        <span className="ds-gauge-minimum-tick" />
+        <span className="ds-gauge-minimum-text">{thresholdDays} days minimum</span>
+      </div>
     </div>
   );
 }

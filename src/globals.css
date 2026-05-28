@@ -317,7 +317,7 @@ label {
 /* Carbon gauge wrapper — contains both the chart and the threshold overlay */
 .ds-gauge-wrap {
   position: relative;
-  margin: 0 -8px;
+  margin: 24px -8px 0;
 }
 
 /* Carbon gauge: suppress default toolbar and background */
@@ -342,6 +342,33 @@ label {
   text-align: center;
   margin-top: -8px;
   padding-bottom: 4px;
+}
+
+/* Minimum requirement label below the gauge */
+.ds-gauge-minimum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-bottom: 4px;
+}
+
+.ds-gauge-minimum-tick {
+  display: inline-block;
+  width: 3px;
+  height: 14px;
+  background: white;
+  border-radius: 2px;
+  border: 1.5px solid #94A3B8;
+}
+
+.ds-gauge-minimum-text {
+  font-family: var(--font-source-sans-3), system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: 0.01em;
 }
 
 /* Info grid — 2-column table of evaluation details */
