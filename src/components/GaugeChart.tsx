@@ -48,7 +48,6 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
   // Span from just inside the inner arc edge to just outside the outer edge
   const tickInner = polarXY(cx, cy, R - arcWidth - 8, thresholdAngle);
   const tickOuter = polarXY(cx, cy, R + 8, thresholdAngle);
-  const labelPt = polarXY(cx, cy, R + 22, thresholdAngle);
 
   const fillColor = qualified ? '#16A34A' : '#EA580C';
 
