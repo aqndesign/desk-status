@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+/* ─── Font CSS variables (set manually in Vite — next/font sets these in Next.js) ─── */
+
+:root {
+  --font-ibm-plex-sans: 'IBM Plex Sans';
+  --font-sora: 'Sora';
+  --font-source-sans-3: 'Source Sans 3';
+}
+
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+
+:root {
+  --font-heading: var(--font-ibm-plex-sans);
+  --font-body: var(--font-source-sans-3);
+  --heading-font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
+
+  --color-primary: #1C2024;
+  --color-secondary: #60646C;
+
+  --brand-gradient: linear-gradient(to right, #3300FC, #95008A, #3C5CDD);
+  --brand-gradient-hover: linear-gradient(to right, #2800e0, #7e0075, #3050c8);
+}
+
+/* ─── Typography ─────────────────────────────────────────────────────────── */
+
+body {
+  font-family: var(--font-body), system-ui, sans-serif;
+  color: var(--color-primary);
+  background-color: #EEF2F7;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6,
+.rt-Heading {
+  font-family: var(--font-heading), system-ui, sans-serif;
+}
+
+h1, h2, h3,
+h1.rt-Heading, h2.rt-Heading, h3.rt-Heading {
+  font-weight: 600;
+}
+
+h4,
+h4.rt-Heading {
+  font-weight: 700;
+}
+
+/* ─── Brand accent override ──────────────────────────────────────────────── */
+
+.radix-themes {
+  --accent-9:        #0064E0;
+  --accent-10:       #0055C4;
+  --accent-11:       #0047A6;
+  --accent-contrast: #ffffff;
+}
+
+/* ─── Radix gray token overrides ─────────────────────────────────────────── */
+
+.radix-themes {
+  --gray-12: var(--color-primary);
+  --gray-11: var(--color-secondary);
+  --gray-a12: var(--color-primary);
+  --gray-a11: var(--color-secondary);
+}
+
+/* ─── Data viz text tokens ───────────────────────────────────────────────── */
+
+.data-viz-lg {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.data-viz-sm {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+/* ─── Carbon Charts overrides ────────────────────────────────────────────── */
+
+:root {
+  --cds-charts-font-family: var(--font-source-sans-3), system-ui, sans-serif;
+  --cds-charts-font-family-condensed: var(--font-source-sans-3), system-ui, sans-serif;
+}
+
+.cds--cc--chart-wrapper g.gauge-numbers text.gauge-value-number {
+  font-family: var(--font-sora), system-ui, sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* 2px white gap between donut/pie segments */
+.cds--cc--pie path.slice,
+.cds--cc--donut path.slice {
+  stroke: white;
+  stroke-width: 2px;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+
+.rt-Button,
+.rt-reset.rt-Button {
+  border-radius: 9999px !important;
+}
+
+/* ─── Card styling ───────────────────────────────────────────────────────── */
+
+.rt-Card {
+  transition: box-shadow 250ms ease, background-color 250ms ease !important;
+}
+
+.rt-BaseCard {
+  --base-card-surface-box-shadow:       0 0 0 0.5px #D9D9E0 !important;
+  --base-card-surface-hover-box-shadow: 0 0 0 0.5px #D9D9E0 !important;
+  box-shadow: none !important;
+}
+
+.card-glass {
+  background:        rgba(255, 255, 255, 0.80);
+  backdrop-filter:         blur(28px) saturate(1.8) brightness(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8) brightness(1.04);
+  border:       0.5px solid rgba(255, 255, 255, 0.75);
+  border-radius: 20px;
+  overflow:      hidden;
+  box-shadow:
+    0 2px 23px rgba(0, 0, 0, 0.054),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.card-interactive {
+  position: relative;
+  transition:
+    box-shadow   250ms ease,
+    transform    250ms ease,
+    background-color 250ms ease !important;
+}
+
+.card-interactive::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transition: box-shadow 150ms ease;
+  box-shadow:
+    inset 0 0 0 0px color-mix(in srgb, var(--accent-9) 0%, transparent),
+    0 0 0 0.5px #D9D9E0;
+}
+
+.card-interactive:hover::after {
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--accent-9) 10%, transparent),
+    0 0 0 1px var(--accent-9);
+}
+
+/* ─── Interactive hover transitions ──────────────────────────────────────── */
+
+.rt-Button,
+.rt-BaseButton {
+  transition:
+    background-color 200ms ease-in-out,
+    color            200ms ease-in-out,
+    box-shadow       200ms ease-in-out,
+    opacity          200ms ease-in-out,
+    transform        200ms ease-in-out !important;
+}
+
+.rt-Button.rt-variant-solid:not([data-accent-color]):hover,
+.rt-Button.rt-variant-solid:not([data-accent-color]):focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(28, 32, 36, 0.1) !important;
+}
+
+.rt-Badge {
+  transition: background-color 250ms ease, color 250ms ease !important;
+}
+
+.rt-TextField-root,
+.rt-TextArea {
+  transition: box-shadow 250ms ease, border-color 250ms ease !important;
+}
+
+.rt-CheckboxButton,
+.rt-RadioGroupItem {
+  transition: background-color 250ms ease, border-color 250ms ease !important;
+}
+
+a {
+  transition: opacity 250ms ease, color 250ms ease;
+}
+
+/* ─── Cursor for clickable components ────────────────────────────────────── */
+
+.rt-Button,
+.rt-BaseButton,
+.rt-CheckboxButton,
+.rt-RadioGroupItem,
+.rt-SegmentedControlItem,
+.rt-SelectTrigger,
+.rt-SliderThumb,
+.rt-SwitchButton,
+.rt-TabsTrigger,
+.rt-DropdownMenuTrigger,
+.rt-ContextMenuTrigger,
+.rt-MenubarTrigger,
+.rt-TooltipTrigger,
+.rt-PopoverTrigger,
+.rt-DialogTrigger,
+.rt-AlertDialogTrigger,
+.rt-HoverCardTrigger,
+.rt-AccordionTrigger,
+a,
+button,
+[role="button"],
+[role="tab"],
+[role="checkbox"],
+[role="radio"],
+[role="menuitem"],
+[role="option"],
+label {
+  cursor: pointer;
+}
+
+/* ─── Dialog / AlertDialog animations ───────────────────────────────────── */
+
+.rt-DialogContent,
+.rt-AlertDialogContent {
+  transition: opacity 350ms ease-in-out, transform 350ms ease-in-out;
+}
+
+.rt-DialogContent[data-state="open"],
+.rt-AlertDialogContent[data-state="open"] {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.rt-DialogContent[data-state="closed"],
+.rt-AlertDialogContent[data-state="closed"] {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* ─── Popover animations ─────────────────────────────────────────────────── */
+
+.rt-PopoverContent {
+  transition: opacity 350ms ease-in-out, transform 350ms ease-in-out;
+}
+
+.rt-PopoverContent[data-state="open"] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.rt-PopoverContent[data-state="closed"] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/* ─── Overlay backdrop ───────────────────────────────────────────────────── */
+
+.rt-DialogOverlay,
+.rt-AlertDialogOverlay {
+  transition: opacity 350ms ease-in-out;
+}
+
+.rt-DialogOverlay[data-state="open"],
+.rt-AlertDialogOverlay[data-state="open"] {
+  opacity: 1;
+}
+
+.rt-DialogOverlay[data-state="closed"],
+.rt-AlertDialogOverlay[data-state="closed"] {
+  opacity: 0;
+}
+
+/* ─── Project: Desk Status ───────────────────────────────────────────────── */
+
+/* Header */
+.ds-header {
+  background: white;
+  border-bottom: 1px solid var(--gray-4, #E8E8EC);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.ds-header-inner {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Main layout */
+.ds-main {
+  max-width: 580px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+}
+
+/* Scenario bar */
+.ds-scenario-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+/* Carbon gauge wrapper — contains both the chart and the threshold overlay */
+.ds-gauge-wrap {
+  position: relative;
+  margin: 0 -8px;
+}
+
+/* Carbon gauge: suppress default toolbar and background */
+.ds-gauge-wrap .cds--cc--chart-wrapper {
+  background: transparent !important;
+}
+
+.ds-gauge-wrap .cds--toolbar-content {
+  display: none !important;
+}
+
+/* Gauge overlay SVG — threshold annotation drawn on top */
+.ds-gauge-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+/* "days in office" label below gauge number */
+.ds-gauge-label {
+  text-align: center;
+  margin-top: -8px;
+  padding-bottom: 4px;
+}
+
+/* Info grid — 2-column table of evaluation details */
+.ds-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--gray-3, #F0F0F3);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.ds-info-cell {
+  background: white;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ds-info-cell:first-child  { border-radius: 12px 0   0   0; }
+.ds-info-cell:nth-child(2) { border-radius: 0   12px 0   0; }
+.ds-info-cell:nth-child(3) { border-radius: 0   0    0   12px; }
+.ds-info-cell:last-child   { border-radius: 0   0    12px 0; }
+
+/* Responsive */
+@media (max-width: 500px) {
+  .ds-info-grid { grid-template-columns: 1fr; }
+  .ds-info-cell:first-child  { border-radius: 12px 12px 0 0; }
+  .ds-info-cell:nth-child(2) { border-radius: 0; }
+  .ds-info-cell:nth-child(3) { border-radius: 0; }
+  .ds-info-cell:last-child   { border-radius: 0 0 12px 12px; }
+}
