@@ -8,11 +8,6 @@ interface DeskGaugeProps {
   qualified: boolean;
 }
 
-// Carbon semi-gauge geometry (from source):
-//   radius = Math.min(svgWidth / 2, svgHeight)
-//   arcCenter = (svgWidth / 2, svgHeight)
-// Height of 300 ensures the threshold label (at ~sin(72°)×R above center)
-// stays within the SVG viewport for typical card widths (~540px → R≈270).
 const CHART_HEIGHT = 300;
 
 function daysToAngle(days: number, total: number): number {
@@ -27,7 +22,10 @@ function polarXY(cx: number, cy: number, r: number, angleDeg: number) {
 
 export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: DeskGaugeProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef(false);
   const [containerWidth, setContainerWidth] = useState(400);
+  // Measured from the actual Carbon SVG element for precise alignment
+  const [gaugeCenter, setGaugeCenter] = useState<{ cx: number; cy: number; r: number } | null>(null);
 
   useEffect(() => {
     if (!wrapperRef.current) return;
@@ -38,18 +36,51 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
     return () => obs.disconnect();
   }, []);
 
-  // Match Carbon's radius formula for semi gauge
-  const R = Math.min(containerWidth / 2, CHART_HEIGHT);
+  // Re-measure whenever container width changes (covers initial render + resize)
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    cancelRef.current = false;
+    setGaugeCenter(null);
+
+    function measure() {
+      if (cancelRef.current || !wrapperRef.current) return;
+      // querySelector returns Carbon's SVG (first in DOM, before our overlay)
+      const svg = wrapperRef.current.querySelector('svg') as SVGSVGElement | null;
+      if (!svg) { setTimeout(measure, 50); return; }
+      const svgRect = svg.getBoundingClientRect();
+      if (svgRect.width === 0 || svgRect.height === 0) { setTimeout(measure, 50); return; }
+      const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      const svgW = svgRect.width;
+      const svgH = svgRect.height;
+      if (!cancelRef.current) {
+        setGaugeCenter({
+          cx: (svgRect.left - wrapperRect.left) + svgW / 2,
+          cy: (svgRect.top - wrapperRect.top) + svgH,
+          r: Math.min(svgW / 2, svgH),
+        });
+      }
+    }
+
+    // Carbon Charts renders asynchronously via D3; 120ms is enough headroom
+    const timer = setTimeout(measure, 120);
+    return () => {
+      cancelRef.current = true;
+      clearTimeout(timer);
+    };
+  }, [containerWidth]);
+
   const arcWidth = 26;
-  const cx = containerWidth / 2;
-  const cy = CHART_HEIGHT;
-
   const thresholdAngle = daysToAngle(thresholdDays, totalDays);
-  // Span from just inside the inner arc edge to just outside the outer edge
-  const tickInner = polarXY(cx, cy, R - arcWidth - 8, thresholdAngle);
-  const tickOuter = polarXY(cx, cy, R + 8, thresholdAngle);
-
   const fillColor = qualified ? '#16A34A' : '#EA580C';
+
+  // Fall back to computed values until DOM measurement completes
+  const gc = gaugeCenter ?? {
+    cx: containerWidth / 2,
+    cy: CHART_HEIGHT,
+    r: Math.min(containerWidth / 2, CHART_HEIGHT),
+  };
+  const tickInner = polarXY(gc.cx, gc.cy, gc.r - arcWidth - 8, thresholdAngle);
+  const tickOuter = polarXY(gc.cx, gc.cy, gc.r + 8, thresholdAngle);
 
   const data = [{ group: 'value', value: (currentDays / totalDays) * 100 }];
   const options = {
@@ -73,16 +104,16 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
     <div className="ds-gauge-wrap" ref={wrapperRef}>
       <GaugeChart data={data} options={options} />
 
-      {/* Threshold annotation overlay — coordinate space matches Carbon's internal SVG */}
+      {/* Threshold annotation overlay — coordinate space derived from Carbon's actual SVG rect */}
       <svg
         className="ds-gauge-overlay"
         width={containerWidth}
         height={CHART_HEIGHT}
         aria-hidden="true"
       >
-        {/* Scale endpoint labels — offset inward so they stay within SVG bounds */}
+        {/* Scale endpoint labels */}
         <text
-          x="10" y={(cy - 10).toFixed(1)}
+          x="10" y={(gc.cy - 10).toFixed(1)}
           textAnchor="start"
           fill="#94A3B8" fontSize="11"
           fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
@@ -90,7 +121,7 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
           0
         </text>
         <text
-          x={(containerWidth - 10).toFixed(1)} y={(cy - 10).toFixed(1)}
+          x={(containerWidth - 10).toFixed(1)} y={(gc.cy - 10).toFixed(1)}
           textAnchor="end"
           fill="#94A3B8" fontSize="11"
           fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
@@ -98,7 +129,7 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
           {totalDays}
         </text>
 
-        {/* Threshold tick — spans the full arc width with a white halo for contrast on any arc color */}
+        {/* Threshold tick — white halo + dark line for contrast on any arc color */}
         <line
           x1={tickInner.x.toFixed(1)} y1={tickInner.y.toFixed(1)}
           x2={tickOuter.x.toFixed(1)} y2={tickOuter.y.toFixed(1)}

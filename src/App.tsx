@@ -8,7 +8,6 @@ import {
   Heading,
   Button,
   Badge,
-  Avatar,
   Callout,
   Separator,
 } from '@radix-ui/themes';
@@ -56,14 +55,19 @@ export default function App() {
       {/* Header */}
       <header className="ds-header">
         <div className="ds-header-inner">
-          <Flex align="center" gap="2">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="2" y="14" width="20" height="7" rx="1.5" fill="#3B82F6" />
-              <rect x="6" y="9" width="12" height="6" rx="1" fill="#60A5FA" />
-              <rect x="9" y="4" width="6" height="6" rx="1" fill="#93C5FD" />
-              <rect x="6" y="19" width="3" height="2" rx="0.5" fill="#1D4ED8" />
-              <rect x="15" y="19" width="3" height="2" rx="0.5" fill="#1D4ED8" />
-            </svg>
+          <Flex align="center" gap="3">
+            <Box style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: '#2657E8',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 10px rgba(62, 99, 221, 0.4)',
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="18" height="18" style={{ color: 'white' }}>
+                <path fill="currentColor" d="M10.627 1.25A3.25 3.25 0 0 0 7.42 3.98l-1.03 6.355c-.076.468-.121.94-.135 1.415h11.492a10.762 10.762 0 0 0-.135-1.415l-1.03-6.355a3.25 3.25 0 0 0-3.208-2.73h-2.746Z"/>
+                <path fill="currentColor" d="M6.909 14.97a2.258 2.258 0 0 1-.193-.22H4.25a1.5 1.5 0 0 1-1.5-1.5v-2.5H2a.75.75 0 0 1 0-1.5h.75a1.5 1.5 0 0 1 1.5 1.5v2.5h15.5v-2.5a1.5 1.5 0 0 1 1.5-1.5H22a.75.75 0 0 1 0 1.5h-.75v2.5a1.5 1.5 0 0 1-1.5 1.5h-2.466a2.26 2.26 0 0 1-.193.22L15.97 16.09a2.25 2.25 0 0 1-1.591.659H12.75v2.064c.096.023.191.053.284.089l3.539 1.376c.71.276 1.177.96 1.177 1.721a.75.75 0 0 1-1.5 0 .346.346 0 0 0-.22-.323l-3.28-1.275V22a.75.75 0 0 1-1.5 0v-1.598l-3.28 1.275a.346.346 0 0 0-.22.323.75.75 0 0 1-1.5 0c0-.762.467-1.445 1.177-1.72l3.539-1.377c.093-.036.188-.066.284-.09V16.75H9.621a2.25 2.25 0 0 1-1.59-.659L6.908 14.97Z"/>
+              </svg>
+            </Box>
             <Heading size="3" style={{ fontFamily: 'var(--font-ibm-plex-sans), system-ui, sans-serif' }}>
               Desk Status
             </Heading>
@@ -107,33 +111,6 @@ export default function App() {
 
         {/* Status card */}
         <Card size="3" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.07)' }}>
-          {/* Employee row */}
-          <Flex align="center" gap="3" mb="1">
-            <Avatar
-              size="3"
-              radius="medium"
-              fallback={employee.initials}
-              color={qualified ? 'green' : 'orange'}
-              variant="soft"
-            />
-            <Box style={{ flex: 1, minWidth: 0 }}>
-              <Text size="4" weight="bold" as="div">
-                {employee.name}
-              </Text>
-              <Text size="2" color="gray" as="div" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {employee.role} · {employee.department}
-              </Text>
-            </Box>
-            <Badge
-              color={qualified ? 'green' : 'orange'}
-              variant="soft"
-              size="2"
-              radius="full"
-            >
-              {qualified ? '✓ Assigned Desk' : 'Coworking Space'}
-            </Badge>
-          </Flex>
-
           {/* Carbon Charts gauge */}
           <DeskGauge
             key={selectedId}
@@ -144,7 +121,7 @@ export default function App() {
           />
 
           {/* "days in office" subtitle under gauge number */}
-          <div className="ds-gauge-label">
+          <div className="ds-gauge-label" style={{ marginBottom: 16 }}>
             <Text size="2" color="gray">days in office</Text>
           </div>
 
