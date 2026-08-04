@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@carbon/charts-react": "^1.27.11",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/sora": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",

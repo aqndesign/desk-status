@@ -52,6 +52,12 @@ export default function App() {
 
   return (
     <Theme accentColor="blue" grayColor="slate" radius="full" scaling="100%" appearance="light">
+      <div className="ds-blob-bg" aria-hidden="true">
+        <div className="ds-blob ds-blob-1" />
+        <div className="ds-blob ds-blob-2" />
+        <div className="ds-blob ds-blob-3" />
+      </div>
+
       {/* Header */}
       <header className="ds-header">
         <div className="ds-header-inner">
