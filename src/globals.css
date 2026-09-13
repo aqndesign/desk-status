@@ -631,9 +631,17 @@ button:focus-visible,
   z-index: -1;
 }
 
+/* Each blob runs four independent cycles — drift (translate), breathe (scale),
+   a slow turn (rotate) and a glow (opacity) — with non-multiple durations, so
+   the combined motion never visibly repeats. Individual transform properties
+   let the animations coexist on one element, and since only transforms and
+   opacity change, the blur is never re-rasterised: it all stays on the
+   compositor. Behind ~90px of blur, position alone reads as static, so the
+   opacity pulse is what makes the drift perceptible. */
 .ds-blob {
   position: absolute;
-  will-change: transform, border-radius;
+  will-change: translate, scale, rotate, opacity;
+  opacity: var(--blob-opacity);
 }
 
 .ds-blob-1 {
@@ -641,13 +649,17 @@ button:focus-visible,
   height: 62vw;
   max-width: 820px;
   background: #0064E0;
-  opacity: 0.17;
+  --blob-opacity: 0.17;
   filter: blur(90px);
   top: -18%;
   right: -14%;
   border-radius: 62% 38% 54% 46% / 52% 61% 39% 48%;
-  animation: blob-move-1 40s ease-in-out infinite;
-  animation-delay: 0s;
+  animation:
+    blob-drift-1 58s linear infinite,
+    blob-breathe  31s ease-in-out infinite,
+    blob-turn    150s linear infinite,
+    blob-glow     27s ease-in-out infinite;
+  animation-delay: 0s, -12s, -40s, -6s;
 }
 
 .ds-blob-2 {
@@ -655,13 +667,17 @@ button:focus-visible,
   height: 74vw;
   max-width: 760px;
   background: #8347B9;
-  opacity: 0.13;
+  --blob-opacity: 0.13;
   filter: blur(100px);
   bottom: -22%;
   left: -16%;
   border-radius: 44% 56% 41% 59% / 56% 44% 61% 39%;
-  animation: blob-move-2 51s ease-in-out infinite;
-  animation-delay: -18s;
+  animation:
+    blob-drift-2 69s linear infinite,
+    blob-breathe  37s ease-in-out infinite,
+    blob-turn    190s linear infinite reverse,
+    blob-glow     33s ease-in-out infinite;
+  animation-delay: -30s, -25s, -100s, -19s;
 }
 
 .ds-blob-3 {
@@ -669,37 +685,70 @@ button:focus-visible,
   height: 52vw;
   max-width: 660px;
   background: #F76B15;
-  opacity: 0.11;
+  --blob-opacity: 0.11;
   filter: blur(85px);
   top: 38%;
   left: 12%;
   border-radius: 51% 49% 57% 43% / 42% 62% 44% 56%;
-  animation: blob-move-3 33s ease-in-out infinite;
-  animation-delay: -9s;
+  animation:
+    blob-drift-3 47s linear infinite,
+    blob-breathe  29s ease-in-out infinite,
+    blob-turn    130s linear infinite,
+    blob-glow     23s ease-in-out infinite;
+  animation-delay: -15s, -8s, -70s, -11s;
 }
 
-@keyframes blob-move-1 {
-  0%   { transform: translate(0px, 0px)     scale(1);    border-radius: 62% 38% 54% 46% / 52% 61% 39% 48%; }
-  18%  { transform: translate(-38px, 32px)  scale(1.06); border-radius: 41% 59% 47% 53% / 63% 37% 57% 43%; }
-  37%  { transform: translate(-22px, 62px)  scale(0.93); border-radius: 57% 43% 62% 38% / 44% 56% 51% 49%; }
-  55%  { transform: translate(32px, 44px)   scale(1.08); border-radius: 46% 54% 39% 61% / 57% 43% 62% 38%; }
-  74%  { transform: translate(24px, -18px)  scale(0.96); border-radius: 53% 47% 56% 44% / 39% 61% 46% 54%; }
-  100% { transform: translate(0px, 0px)     scale(1);    border-radius: 62% 38% 54% 46% / 52% 61% 39% 48%; }
+/* Drift paths are loose closed loops. Linear timing keeps the blobs moving at
+   a steady ~8px/s with no pauses; behind the blur the direction changes
+   between waypoints are invisible. */
+@keyframes blob-drift-1 {
+  0%   { translate: 0 0; }
+  14%  { translate: -46px 34px; }
+  31%  { translate: -72px 88px; }
+  48%  { translate: -24px 112px; }
+  66%  { translate: 42px 76px; }
+  84%  { translate: 36px 18px; }
+  100% { translate: 0 0; }
 }
 
-@keyframes blob-move-2 {
-  0%   { transform: translate(0px, 0px)     scale(1);    border-radius: 44% 56% 41% 59% / 56% 44% 61% 39%; }
-  22%  { transform: translate(52px, -38px)  scale(0.95); border-radius: 62% 38% 56% 44% / 39% 61% 46% 54%; }
-  47%  { transform: translate(36px, -68px)  scale(1.08); border-radius: 34% 66% 52% 48% / 62% 38% 67% 33%; }
-  71%  { transform: translate(-28px, -33px) scale(0.92); border-radius: 57% 43% 34% 66% / 46% 54% 41% 59%; }
-  100% { transform: translate(0px, 0px)     scale(1);    border-radius: 44% 56% 41% 59% / 56% 44% 61% 39%; }
+@keyframes blob-drift-2 {
+  0%   { translate: 0 0; }
+  17%  { translate: 58px -40px; }
+  36%  { translate: 88px -94px; }
+  52%  { translate: 42px -118px; }
+  70%  { translate: -36px -88px; }
+  86%  { translate: -42px -30px; }
+  100% { translate: 0 0; }
 }
 
-@keyframes blob-move-3 {
-  0%   { transform: translate(0px, 0px)     scale(1);    border-radius: 51% 49% 57% 43% / 42% 62% 44% 56%; }
-  30%  { transform: translate(-48px, -53px) scale(1.12); border-radius: 67% 33% 44% 56% / 57% 43% 34% 66%; }
-  63%  { transform: translate(42px, -28px)  scale(0.90); border-radius: 38% 62% 61% 39% / 52% 48% 57% 43%; }
-  100% { transform: translate(0px, 0px)     scale(1);    border-radius: 51% 49% 57% 43% / 42% 62% 44% 56%; }
+@keyframes blob-drift-3 {
+  0%   { translate: 0 0; }
+  20%  { translate: -58px -52px; }
+  38%  { translate: -42px -104px; }
+  55%  { translate: 36px -94px; }
+  73%  { translate: 70px -36px; }
+  88%  { translate: 36px 18px; }
+  100% { translate: 0 0; }
+}
+
+/* Slightly anisotropic breathing so the blob squashes rather than just zooms */
+@keyframes blob-breathe {
+  0%   { scale: 1 1; }
+  33%  { scale: 1.07 0.96; }
+  66%  { scale: 0.95 1.06; }
+  100% { scale: 1 1; }
+}
+
+@keyframes blob-turn {
+  from { rotate: 0deg; }
+  to   { rotate: 360deg; }
+}
+
+/* Glow swings between ~70% and ~130% of each blob's base opacity */
+@keyframes blob-glow {
+  0%   { opacity: calc(var(--blob-opacity) * 0.7); }
+  50%  { opacity: calc(var(--blob-opacity) * 1.3); }
+  100% { opacity: calc(var(--blob-opacity) * 0.7); }
 }
 
 /* ─── Project: Desk Status ───────────────────────────────────────────────── */
@@ -738,6 +787,39 @@ button:focus-visible,
   flex-wrap: wrap;
 }
 
+/* Status card — translucent, borderless container for the sections below.
+   Radix paints the card panel on ::before (--card-background-color) and the
+   border as a box-shadow on ::after, so both are overridden via their vars. */
+.ds-status-card {
+  --card-padding: 16px;
+  --card-border-radius: 24px;
+  --card-background-color: rgba(255, 255, 255, 0.45);
+  --backdrop-filter-panel: blur(24px) saturate(1.6);
+  --base-card-surface-box-shadow: none !important;
+  --base-card-surface-hover-box-shadow: none !important;
+  box-shadow: 0 8px 32px rgba(28, 32, 36, 0.06) !important;
+}
+
+/* Placement banner at the top of the status card */
+.ds-banner {
+  border-radius: 14px;
+  row-gap: 4px;
+}
+
+/* White sub-cards inside the status card */
+.ds-section-card {
+  background: white;
+  border-radius: 16px;
+}
+
+.ds-gauge-card {
+  padding: 16px 16px 14px;
+}
+
+.ds-info-card {
+  overflow: hidden;
+}
+
 /* Gauge wrapper — measured by ResizeObserver for the SVG width */
 .ds-gauge-wrap {
   margin: 0 -8px 0;
@@ -747,14 +829,6 @@ button:focus-visible,
   display: block;
 }
 
-/* "days in office" label below gauge number */
-.ds-gauge-label {
-  text-align: center;
-  margin-top: -8px;
-  padding-bottom: 4px;
-  margin-bottom: 16px;
-}
-
 /* Minimum requirement label below the gauge */
 .ds-gauge-minimum {
   display: flex;
@@ -762,7 +836,6 @@ button:focus-visible,
   justify-content: center;
   gap: 6px;
   margin-top: 8px;
-  margin-bottom: 16px;
 }
 
 .ds-gauge-minimum-tick {
@@ -786,11 +859,9 @@ button:focus-visible,
 .ds-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  /* 1px gaps over a gray background act as the cell dividers */
   gap: 1px;
-  background: var(--gray-3, #F0F0F3);
-  border-radius: 12px;
-  overflow: hidden;
-  margin-top: 16px;
+  background: var(--gray-4, #E8E8EC);
 }
 
 .ds-info-cell {
@@ -801,16 +872,7 @@ button:focus-visible,
   gap: 4px;
 }
 
-.ds-info-cell:first-child  { border-radius: 12px 0   0   0; }
-.ds-info-cell:nth-child(2) { border-radius: 0   12px 0   0; }
-.ds-info-cell:nth-child(3) { border-radius: 0   0    0   12px; }
-.ds-info-cell:last-child   { border-radius: 0   0    12px 0; }
-
 /* Responsive */
 @media (max-width: 500px) {
   .ds-info-grid { grid-template-columns: 1fr; }
-  .ds-info-cell:first-child  { border-radius: 12px 12px 0 0; }
-  .ds-info-cell:nth-child(2) { border-radius: 0; }
-  .ds-info-cell:nth-child(3) { border-radius: 0; }
-  .ds-info-cell:last-child   { border-radius: 0 0 12px 12px; }
 }

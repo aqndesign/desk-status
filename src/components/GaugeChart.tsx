@@ -111,6 +111,15 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
             {currentDays}
           </text>
 
+          <text
+            x={cx.toFixed(1)} y={(cy + 22).toFixed(1)}
+            textAnchor="middle"
+            fill="#60646C" fontSize="14"
+            fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
+          >
+            days in office
+          </text>
+
           {/* Scale endpoint labels, centered under the arc ends */}
           <text
             x={(cx - rMid).toFixed(1)} y={(cy + 24).toFixed(1)}

@@ -17,6 +17,45 @@ import { Icon } from './components/ui/Icon';
 
 const TOTAL_DAYS = 125;
 const THRESHOLD_DAYS = 75;
+// Within this many days of the threshold, the coworking message calls out how close they were
+const NEAR_MISS_DAYS = 5;
+
+type Placement = 'desk' | 'coworking-close' | 'coworking';
+
+function getPlacement(days: number): Placement {
+  if (days >= THRESHOLD_DAYS) return 'desk';
+  if (THRESHOLD_DAYS - days <= NEAR_MISS_DAYS) return 'coworking-close';
+  return 'coworking';
+}
+
+function pluralDays(n: number): string {
+  return n === 1 ? '1 day' : `${n} days`;
+}
+
+function getBanner(placement: Placement, delta: number) {
+  switch (placement) {
+    case 'desk':
+      return {
+        icon: 'trophy',
+        title: "Solid work badging in! You've earned yourself a desk.",
+        body: delta > 0
+          ? `You're ${pluralDays(delta)} past the minimum. Keep up the great consistency!`
+          : 'You landed right on the minimum. Keep up the great consistency!',
+      };
+    case 'coworking-close':
+      return {
+        icon: 'coffee',
+        title: "You'll be set up in the coworking area this time.",
+        body: `You're only ${pluralDays(delta)} away from earning a desk — so close! In the meantime, the coworking areas are well-equipped to help you do your best work.`,
+      };
+    case 'coworking':
+      return {
+        icon: 'coffee',
+        title: "You'll be set up in the coworking area.",
+        body: "Don't worry — the coworking areas are well-equipped to help you do your best work.",
+      };
+  }
+}
 
 interface Employee {
   id: string;
@@ -37,6 +76,14 @@ const EMPLOYEES: Employee[] = [
     days: 83,
   },
   {
+    id: 'near-miss',
+    name: 'Sam Patel',
+    initials: 'SP',
+    role: 'Software Engineer',
+    department: 'Engineering',
+    days: 72,
+  },
+  {
     id: 'coworking',
     name: 'Jordan Lee',
     initials: 'JL',
@@ -51,6 +98,7 @@ export default function App() {
   const employee = EMPLOYEES.find(e => e.id === selectedId)!;
   const qualified = employee.days >= THRESHOLD_DAYS;
   const delta = Math.abs(employee.days - THRESHOLD_DAYS);
+  const banner = getBanner(getPlacement(employee.days), delta);
 
   return (
     <Theme accentColor="blue" grayColor="slate" radius="full" scaling="100%" appearance="light">
@@ -108,63 +156,60 @@ export default function App() {
         </div>
 
         {/* Status card */}
-        <Card size="3" className="card-glass">
-          {/* Custom SVG gauge — see GaugeChart.tsx */}
-          <DeskGauge
-            key={selectedId}
-            currentDays={employee.days}
-            totalDays={TOTAL_DAYS}
-            thresholdDays={THRESHOLD_DAYS}
-            qualified={qualified}
-          />
+        <Card size="2" className="ds-status-card">
+          <Flex direction="column" gap="3">
+            {/* Placement banner */}
+            <Callout.Root color={qualified ? 'green' : 'orange'} variant="soft" size="2" className="ds-banner">
+              <Callout.Icon>
+                <Icon name={banner.icon} size={20} />
+              </Callout.Icon>
+              <Callout.Text size="3" weight="bold">{banner.title}</Callout.Text>
+              <Callout.Text size="2">{banner.body}</Callout.Text>
+            </Callout.Root>
 
-          {/* "days in office" subtitle under gauge number */}
-          <div className="ds-gauge-label" style={{ marginBottom: 16 }}>
-            <Text size="2" color="gray">days in office</Text>
-          </div>
+            {/* Custom SVG gauge — see GaugeChart.tsx */}
+            <Box className="ds-section-card ds-gauge-card">
+              <DeskGauge
+                key={selectedId}
+                currentDays={employee.days}
+                totalDays={TOTAL_DAYS}
+                thresholdDays={THRESHOLD_DAYS}
+                qualified={qualified}
+              />
+            </Box>
 
-          {/* Progress callout */}
-          <Callout.Root color={qualified ? 'green' : 'orange'} variant="soft" mb="4" style={{ borderRadius: '10px' }}>
-            <Callout.Icon>
-              <Icon name={qualified ? 'check-circle' : 'alert-triangle'} />
-            </Callout.Icon>
-            <Callout.Text>
-              {qualified
-                ? <><Text weight="bold">{delta} days</Text> above the minimum — desk assigned</>
-                : <><Text weight="bold">{delta} days</Text> below the minimum — coworking placement</>
-              }
-            </Callout.Text>
-          </Callout.Root>
-
-          {/* Info grid */}
-          <Grid className="ds-info-grid">
-            <Box className="ds-info-cell">
-              <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                Evaluation period
-              </Text>
-              <Text size="2" weight="medium">Apr 1 – Jun 30, 2025</Text>
+            {/* Evaluation details */}
+            <Box className="ds-section-card ds-info-card">
+              <Grid className="ds-info-grid">
+                <Box className="ds-info-cell">
+                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    Evaluation period
+                  </Text>
+                  <Text size="2" weight="medium">Apr 1 – Jun 30, 2025</Text>
+                </Box>
+                <Box className="ds-info-cell">
+                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    Period length
+                  </Text>
+                  <Text size="2" weight="medium">{TOTAL_DAYS} days total</Text>
+                </Box>
+                <Box className="ds-info-cell">
+                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    Min. requirement
+                  </Text>
+                  <Text size="2" weight="medium">{THRESHOLD_DAYS} days in office</Text>
+                </Box>
+                <Box className="ds-info-cell">
+                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    Days logged
+                  </Text>
+                  <Text size="2" weight="medium" color={qualified ? 'green' : 'orange'}>
+                    {employee.days} / {TOTAL_DAYS} days
+                  </Text>
+                </Box>
+              </Grid>
             </Box>
-            <Box className="ds-info-cell">
-              <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                Period length
-              </Text>
-              <Text size="2" weight="medium">{TOTAL_DAYS} days total</Text>
-            </Box>
-            <Box className="ds-info-cell">
-              <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                Min. requirement
-              </Text>
-              <Text size="2" weight="medium">{THRESHOLD_DAYS} days in office</Text>
-            </Box>
-            <Box className="ds-info-cell">
-              <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                Days logged
-              </Text>
-              <Text size="2" weight="medium" color={qualified ? 'green' : 'orange'}>
-                {employee.days} / {TOTAL_DAYS} days
-              </Text>
-            </Box>
-          </Grid>
+          </Flex>
         </Card>
 
         <Separator size="4" my="4" style={{ background: 'transparent' }} />
