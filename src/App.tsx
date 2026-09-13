@@ -6,12 +6,14 @@ import {
   Box,
   Text,
   Heading,
-  Button,
   Badge,
   Callout,
   Separator,
+  SegmentedControl,
+  Grid,
 } from '@radix-ui/themes';
 import { DeskGauge } from './components/GaugeChart';
+import { Icon } from './components/ui/Icon';
 
 const TOTAL_DAYS = 125;
 const THRESHOLD_DAYS = 75;
@@ -64,19 +66,15 @@ export default function App() {
           <Flex align="center" gap="3">
             <Box style={{
               width: 32, height: 32, borderRadius: 8,
-              background: '#2657E8',
+              background: 'var(--accent-9)',
+              color: 'var(--accent-contrast)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0,
-              boxShadow: '0 2px 10px rgba(62, 99, 221, 0.4)',
+              boxShadow: '0 2px 10px color-mix(in srgb, var(--accent-9) 40%, transparent)',
             }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" width="18" height="18" style={{ color: 'white' }}>
-                <path fill="currentColor" d="M10.627 1.25A3.25 3.25 0 0 0 7.42 3.98l-1.03 6.355c-.076.468-.121.94-.135 1.415h11.492a10.762 10.762 0 0 0-.135-1.415l-1.03-6.355a3.25 3.25 0 0 0-3.208-2.73h-2.746Z"/>
-                <path fill="currentColor" d="M6.909 14.97a2.258 2.258 0 0 1-.193-.22H4.25a1.5 1.5 0 0 1-1.5-1.5v-2.5H2a.75.75 0 0 1 0-1.5h.75a1.5 1.5 0 0 1 1.5 1.5v2.5h15.5v-2.5a1.5 1.5 0 0 1 1.5-1.5H22a.75.75 0 0 1 0 1.5h-.75v2.5a1.5 1.5 0 0 1-1.5 1.5h-2.466a2.26 2.26 0 0 1-.193.22L15.97 16.09a2.25 2.25 0 0 1-1.591.659H12.75v2.064c.096.023.191.053.284.089l3.539 1.376c.71.276 1.177.96 1.177 1.721a.75.75 0 0 1-1.5 0 .346.346 0 0 0-.22-.323l-3.28-1.275V22a.75.75 0 0 1-1.5 0v-1.598l-3.28 1.275a.346.346 0 0 0-.22.323.75.75 0 0 1-1.5 0c0-.762.467-1.445 1.177-1.72l3.539-1.377c.093-.036.188-.066.284-.09V16.75H9.621a2.25 2.25 0 0 1-1.59-.659L6.908 14.97Z"/>
-              </svg>
+              <Icon name="desk-chair" size={18} />
             </Box>
-            <Heading size="3" style={{ fontFamily: 'var(--font-ibm-plex-sans), system-ui, sans-serif' }}>
-              Desk Status
-            </Heading>
+            <Heading size="3">Desk Status</Heading>
           </Flex>
           <Badge color="blue" variant="soft" radius="full">
             Q2 '25 Evaluation
@@ -91,33 +89,27 @@ export default function App() {
           <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Preview scenario
           </Text>
-          <Flex gap="1" p="1" style={{ background: 'white', borderRadius: '10px', border: '1px solid var(--gray-4)' }}>
+          <SegmentedControl.Root size="1" value={selectedId} onValueChange={setSelectedId}>
             {EMPLOYEES.map(e => {
               const isQual = e.days >= THRESHOLD_DAYS;
-              const isActive = selectedId === e.id;
               return (
-                <Button
-                  key={e.id}
-                  size="1"
-                  variant={isActive ? 'solid' : 'ghost'}
-                  color={isActive ? 'gray' : 'gray'}
-                  highContrast={isActive}
-                  onClick={() => setSelectedId(e.id)}
-                >
-                  <Box
-                    width="7px" height="7px"
-                    style={{ borderRadius: '50%', background: isQual ? '#22C55E' : '#F97316', flexShrink: 0 }}
-                  />
-                  {e.name}
-                </Button>
+                <SegmentedControl.Item key={e.id} value={e.id}>
+                  <Flex align="center" gap="2">
+                    <Box
+                      width="7px" height="7px"
+                      style={{ borderRadius: '50%', background: isQual ? '#22C55E' : '#F97316', flexShrink: 0 }}
+                    />
+                    {e.name}
+                  </Flex>
+                </SegmentedControl.Item>
               );
             })}
-          </Flex>
+          </SegmentedControl.Root>
         </div>
 
         {/* Status card */}
-        <Card size="3" style={{ borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.07)' }}>
-          {/* Carbon Charts gauge */}
+        <Card size="3" className="card-glass">
+          {/* Custom SVG gauge — see GaugeChart.tsx */}
           <DeskGauge
             key={selectedId}
             currentDays={employee.days}
@@ -133,6 +125,9 @@ export default function App() {
 
           {/* Progress callout */}
           <Callout.Root color={qualified ? 'green' : 'orange'} variant="soft" mb="4" style={{ borderRadius: '10px' }}>
+            <Callout.Icon>
+              <Icon name={qualified ? 'check-circle' : 'alert-triangle'} />
+            </Callout.Icon>
             <Callout.Text>
               {qualified
                 ? <><Text weight="bold">{delta} days</Text> above the minimum — desk assigned</>
@@ -142,34 +137,34 @@ export default function App() {
           </Callout.Root>
 
           {/* Info grid */}
-          <div className="ds-info-grid">
-            <div className="ds-info-cell">
+          <Grid className="ds-info-grid">
+            <Box className="ds-info-cell">
               <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Evaluation period
               </Text>
               <Text size="2" weight="medium">Apr 1 – Jun 30, 2025</Text>
-            </div>
-            <div className="ds-info-cell">
+            </Box>
+            <Box className="ds-info-cell">
               <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Period length
               </Text>
               <Text size="2" weight="medium">{TOTAL_DAYS} days total</Text>
-            </div>
-            <div className="ds-info-cell">
+            </Box>
+            <Box className="ds-info-cell">
               <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Min. requirement
               </Text>
               <Text size="2" weight="medium">{THRESHOLD_DAYS} days in office</Text>
-            </div>
-            <div className="ds-info-cell">
+            </Box>
+            <Box className="ds-info-cell">
               <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                 Days logged
               </Text>
               <Text size="2" weight="medium" color={qualified ? 'green' : 'orange'}>
                 {employee.days} / {TOTAL_DAYS} days
               </Text>
-            </div>
-          </div>
+            </Box>
+          </Grid>
         </Card>
 
         <Separator size="4" my="4" style={{ background: 'transparent' }} />

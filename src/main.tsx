@@ -8,6 +8,7 @@ import '@fontsource/source-sans-3/600.css'
 
 // Stylesheet order per design system skill
 import '@radix-ui/themes/styles.css'
+import './styles/uicons.css'
 import './globals.css'
 
 import { StrictMode } from 'react'

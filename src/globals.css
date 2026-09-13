@@ -13,13 +13,26 @@
 :root {
   --font-heading: var(--font-ibm-plex-sans);
   --font-body: var(--font-source-sans-3);
-  --heading-font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
 
   --color-primary: #1C2024;
   --color-secondary: #60646C;
 
+  /* Concrete accent value. Use this (not var(--accent-9)) wherever the colour
+     must stay brand blue inside gray-coloured Radix components, because Radix
+     remaps --accent-* to the gray scale under [data-accent-color="gray"]. */
+  --color-accent: #0064E0;
+
   --brand-gradient: linear-gradient(to right, #3300FC, #95008A, #3C5CDD);
   --brand-gradient-hover: linear-gradient(to right, #2800e0, #7e0075, #3050c8);
+}
+
+/* ─── Radix font token overrides ─────────────────────────────────────────── */
+
+/* Radix sets --default-font-family and --heading-font-family on .radix-themes,
+   not :root, so the override has to live at the same level. */
+.radix-themes {
+  --default-font-family: var(--font-source-sans-3), system-ui, sans-serif;
+  --heading-font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
 }
 
 /* ─── Typography ─────────────────────────────────────────────────────────── */
@@ -49,7 +62,7 @@ h4.rt-Heading {
 /* ─── Brand accent override ──────────────────────────────────────────────── */
 
 .radix-themes {
-  --accent-9:        #0064E0;
+  --accent-9:        var(--color-accent);
   --accent-10:       #0055C4;
   --accent-11:       #0047A6;
   --accent-contrast: #ffffff;
@@ -82,10 +95,29 @@ h4.rt-Heading {
   letter-spacing: -0.01em;
 }
 
+/* ─── Uicons: replace Radix's built-in glyphs (round · solid · regular) ──── */
+
+.rt-SelectIcon svg,
+.rt-CheckboxIndicator svg {
+  display: none;
+}
+
+.rt-SelectIcon::after,
+.rt-CheckboxIndicator::after {
+  font-family: "uic-round-solid-regular";
+  font-style: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+}
+.rt-SelectIcon::after        { content: "\ea14"; } /* .uic-chevron-down */
+.rt-CheckboxIndicator::after { content: "\ea10"; } /* .uic-checkmark    */
+
 /* ─── Buttons ────────────────────────────────────────────────────────────── */
 
 .rt-Button,
-.rt-reset.rt-Button {
+.rt-reset.rt-Button,
+.rt-IconButton,
+.rt-reset.rt-IconButton {
   border-radius: 9999px !important;
 }
 
@@ -108,9 +140,10 @@ h4.rt-Heading {
   border:       0.5px solid rgba(255, 255, 255, 0.75);
   border-radius: 20px;
   overflow:      hidden;
+  /* !important: must beat the .rt-BaseCard reset above when applied to a Radix Card */
   box-shadow:
     0 2px 23px rgba(0, 0, 0, 0.054),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
 }
 
 .card-interactive {
@@ -257,6 +290,335 @@ label {
 .rt-DialogOverlay[data-state="closed"],
 .rt-AlertDialogOverlay[data-state="closed"] {
   opacity: 0;
+}
+
+/* ─── Pressed / active states ────────────────────────────────────────────── */
+
+/* Solid buttons: settle back down and darken when pressed */
+.rt-Button.rt-variant-solid:not([data-accent-color]):active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(28, 32, 36, 0.12) !important;
+  background-color: var(--accent-11) !important;
+}
+
+/* Soft / outline / surface / ghost buttons: subtle press */
+.rt-Button:not(.rt-variant-solid):active,
+.rt-IconButton:not(.rt-variant-solid):active,
+.rt-SegmentedControlItem:active,
+.rt-TabsTrigger:active {
+  transform: scale(0.97);
+  transition-duration: 80ms !important;
+}
+
+/* Cards: press feedback on interactive cards only */
+.card-interactive:active {
+  transform: scale(0.99);
+}
+
+/* ─── Keyboard focus rings ───────────────────────────────────────────────── */
+
+/* Pin Radix's focus tokens to the project accent and give non-Radix
+   focusable elements the same ring. :focus-visible only, so mouse clicks
+   never show a ring. */
+.radix-themes {
+  --focus-8: var(--color-accent);
+  --focus-a8: color-mix(in srgb, var(--color-accent) 60%, transparent);
+}
+
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible,
+.card-interactive:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* Inputs: 2px accent ring replaces the browser outline */
+.rt-TextFieldInput:focus-visible,
+.rt-TextAreaInput:focus-visible,
+.rt-TextField-root:has(input:focus-visible),
+.rt-TextArea:has(textarea:focus-visible),
+.rt-SelectTrigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent) !important;
+}
+
+/* Checkbox, radio, switch, slider */
+.rt-CheckboxButton:has(:focus-visible),
+.rt-RadioGroupItem:has(:focus-visible),
+.rt-SwitchButton:has(:focus-visible),
+.rt-SliderThumb:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ─── Disabled states ────────────────────────────────────────────────────── */
+
+/* One rule for every disabled control: 45% opacity, no hover motion,
+   not-allowed cursor. Radix already prevents pointer events. */
+.rt-Button:disabled,
+.rt-Button[data-disabled],
+.rt-IconButton:disabled,
+.rt-IconButton[data-disabled],
+.rt-TextField-root:has(input:disabled),
+.rt-TextArea:has(textarea:disabled),
+.rt-SelectTrigger:disabled,
+.rt-SelectTrigger[data-disabled],
+.rt-CheckboxButton[data-disabled],
+.rt-RadioGroupItem[data-disabled],
+.rt-SwitchButton[data-disabled],
+.rt-SliderRoot[data-disabled],
+.rt-TabsTrigger:disabled,
+.rt-SegmentedControlItem:disabled,
+.rt-DropdownMenuItem[data-disabled],
+.rt-ContextMenuItem[data-disabled],
+.rt-SelectItem[data-disabled],
+.card-interactive[aria-disabled="true"] {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.rt-Button:disabled:hover,
+.rt-Button[data-disabled]:hover {
+  transform: none !important;
+}
+
+/* ─── Menu, Select, Tooltip, HoverCard entry/exit ────────────────────────── */
+
+/* Floating content pops from its anchor: 180ms fade + scale so menus feel
+   snappier than dialogs. Origin follows Radix's transform-origin var. */
+.rt-DropdownMenuContent,
+.rt-ContextMenuContent,
+.rt-MenubarContent,
+.rt-SelectContent,
+.rt-HoverCardContent,
+.rt-TooltipContent {
+  transform-origin: var(--radix-popper-transform-origin, center);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.rt-DropdownMenuContent[data-state="open"],
+.rt-ContextMenuContent[data-state="open"],
+.rt-MenubarContent[data-state="open"],
+.rt-SelectContent[data-state="open"],
+.rt-HoverCardContent[data-state="open"],
+.rt-TooltipContent[data-state="delayed-open"],
+.rt-TooltipContent[data-state="instant-open"] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.rt-DropdownMenuContent[data-state="closed"],
+.rt-ContextMenuContent[data-state="closed"],
+.rt-MenubarContent[data-state="closed"],
+.rt-SelectContent[data-state="closed"],
+.rt-HoverCardContent[data-state="closed"],
+.rt-TooltipContent[data-state="closed"] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/* Menu items: 120ms highlight, accent background at low alpha */
+.rt-DropdownMenuItem,
+.rt-ContextMenuItem,
+.rt-MenubarItem,
+.rt-SelectItem {
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.rt-DropdownMenuItem[data-highlighted],
+.rt-ContextMenuItem[data-highlighted],
+.rt-MenubarItem[data-highlighted],
+.rt-SelectItem[data-highlighted] {
+  background-color: color-mix(in srgb, var(--accent-9) 10%, transparent) !important;
+  color: var(--accent-11) !important;
+}
+
+/* ─── Accordion / Collapsible ────────────────────────────────────────────── */
+
+.rt-AccordionContent,
+[data-radix-collapsible-content] {
+  overflow: hidden;
+}
+
+.rt-AccordionContent[data-state="open"],
+[data-radix-collapsible-content][data-state="open"] {
+  animation: accordion-down 250ms ease-out;
+}
+
+.rt-AccordionContent[data-state="closed"],
+[data-radix-collapsible-content][data-state="closed"] {
+  animation: accordion-up 200ms ease-in;
+}
+
+@keyframes accordion-down {
+  from { height: 0; opacity: 0; }
+  to   { height: var(--radix-accordion-content-height, var(--radix-collapsible-content-height)); opacity: 1; }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height, var(--radix-collapsible-content-height)); opacity: 1; }
+  to   { height: 0; opacity: 0; }
+}
+
+/* Caret rotates with open state — pair with <Icon name="chevron-down" /> */
+.rt-AccordionTrigger .uic-chevron-down,
+[data-radix-collapsible-trigger] .uic-chevron-down {
+  transition: transform 250ms ease;
+}
+
+.rt-AccordionTrigger[data-state="open"] .uic-chevron-down,
+[data-radix-collapsible-trigger][data-state="open"] .uic-chevron-down {
+  transform: rotate(180deg);
+}
+
+/* ─── Tabs and Segmented Control ─────────────────────────────────────────── */
+
+.rt-TabsTrigger {
+  transition: color 200ms ease;
+}
+
+.rt-TabsTrigger::before {
+  transition: background-color 200ms ease, transform 200ms ease;
+}
+
+.rt-SegmentedControlIndicator::before {
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Switch / Checkbox / Radio motion ───────────────────────────────────── */
+
+.rt-SwitchThumb {
+  transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1), background-color 180ms ease;
+}
+
+.rt-CheckboxIndicator,
+.rt-RadioGroupIndicator {
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+/* ─── Loading and skeleton ───────────────────────────────────────────────── */
+
+/* Buttons: pass loading={true} on Radix <Button> to show its Spinner.
+   Keep the button's size stable and dim it slightly. */
+.rt-Button[data-loading],
+.rt-Button:has(.rt-Spinner) {
+  opacity: 0.8;
+  pointer-events: none;
+  transform: none !important;
+}
+
+/* Radix <Skeleton> shimmer: neutral grey, 1.4s sweep */
+.rt-Skeleton {
+  background: linear-gradient(90deg, #EDEEF1 25%, #F6F7F9 50%, #EDEEF1 75%);
+  background-size: 200% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+@keyframes skeleton-sweep {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* ─── Toasts ─────────────────────────────────────────────────────────────── */
+
+/* Radix Themes ships no Toast; use @radix-ui/react-toast and apply .toast
+   to its Root. Slides in from the right, swipes out. */
+.toast {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(28, 32, 36, 0.12), 0 0 0 0.5px #D9D9E0;
+  background: #ffffff;
+}
+
+.toast[data-state="open"]   { animation: toast-in 250ms cubic-bezier(0.16, 1, 0.3, 1); }
+.toast[data-state="closed"] { animation: toast-out 150ms ease-in forwards; }
+.toast[data-swipe="move"]   { transform: translateX(var(--radix-toast-swipe-move-x)); }
+.toast[data-swipe="cancel"] { transform: translateX(0); transition: transform 200ms ease-out; }
+.toast[data-swipe="end"]    { animation: toast-swipe-out 120ms ease-out forwards; }
+
+@keyframes toast-in {
+  from { transform: translateX(calc(100% + 24px)); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+@keyframes toast-swipe-out {
+  from { transform: translateX(var(--radix-toast-swipe-end-x)); }
+  to   { transform: translateX(calc(100% + 24px)); }
+}
+
+/* ─── Drag and reorder feedback ──────────────────────────────────────────── */
+
+/* Apply .draggable to any reorderable item (dnd-kit, native DnD, etc.). */
+.draggable {
+  transition: box-shadow 150ms ease, transform 150ms ease, opacity 150ms ease;
+  touch-action: none;
+}
+
+.draggable .drag-handle {
+  cursor: grab;
+  color: var(--color-secondary);
+}
+
+.draggable[data-dragging="true"],
+.draggable.is-dragging {
+  cursor: grabbing;
+  box-shadow: 0 12px 32px rgba(28, 32, 36, 0.18), 0 0 0 1px var(--accent-9);
+  transform: scale(1.02);
+  opacity: 0.95;
+  z-index: 10;
+}
+
+.draggable[data-dragging="true"] .drag-handle,
+.draggable.is-dragging .drag-handle {
+  cursor: grabbing;
+}
+
+.draggable.is-placeholder {
+  opacity: 0.35;
+  box-shadow: none;
+  transform: none;
+}
+
+[data-drop-target="true"],
+.drop-target {
+  box-shadow: inset 0 0 0 2px var(--accent-9);
+  background-color: color-mix(in srgb, var(--accent-9) 5%, transparent);
+}
+
+/* ─── Reduced motion ─────────────────────────────────────────────────────── */
+
+/* Respect the OS preference: state changes stay instant but visible.
+   Opacity fades stay; transforms, sweeps and the blob drift are removed. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .rt-Button.rt-variant-solid:not([data-accent-color]):hover,
+  .rt-Button.rt-variant-solid:not([data-accent-color]):focus-visible,
+  .card-interactive:active,
+  .draggable[data-dragging="true"],
+  .draggable.is-dragging {
+    transform: none;
+  }
+
+  .rt-Skeleton {
+    animation: none;
+    background: #EDEEF1;
+  }
 }
 
 /* ─── Animated blob background ──────────────────────────────────────────── */
