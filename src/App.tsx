@@ -1,18 +1,23 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import {
   Theme,
-  Card,
   Flex,
   Box,
   Text,
   Heading,
   Badge,
-  Callout,
+  Button,
   Separator,
   SegmentedControl,
   Grid,
 } from '@radix-ui/themes';
+import { BottomSheet } from './components/BottomSheet';
 import { DeskGauge } from './components/GaugeChart';
+
+// The Lottie player and animation data are ~350 KB, so they load as their own chunk
+const HeroIllustration = lazy(() =>
+  import('./components/HeroIllustration').then(m => ({ default: m.HeroIllustration })),
+);
 import { Icon } from './components/ui/Icon';
 
 const TOTAL_DAYS = 125;
@@ -32,27 +37,22 @@ function pluralDays(n: number): string {
   return n === 1 ? '1 day' : `${n} days`;
 }
 
-function getBanner(placement: Placement, delta: number) {
+function getHeroMessage(placement: Placement, delta: number) {
   switch (placement) {
     case 'desk':
       return {
-        icon: 'trophy',
         title: "Solid work badging in! You've earned yourself a desk.",
-        body: delta > 0
-          ? `You're ${pluralDays(delta)} past the minimum. Keep up the great consistency!`
-          : 'You landed right on the minimum. Keep up the great consistency!',
+        body: "We'll take a fresh look next half, so keep up the great rhythm and this desk stays yours.",
       };
     case 'coworking-close':
       return {
-        icon: 'coffee',
         title: "You'll be set up in the coworking area this time.",
-        body: `You're only ${pluralDays(delta)} away from earning a desk — so close! In the meantime, the coworking areas are well-equipped to help you do your best work.`,
+        body: `You're only ${pluralDays(delta)} away from earning a desk — so close! In the meantime, the coworking areas are well-equipped to help you do your best work, and you'll get a fresh shot next half.`,
       };
     case 'coworking':
       return {
-        icon: 'coffee',
         title: "You'll be set up in the coworking area.",
-        body: "Don't worry — the coworking areas are well-equipped to help you do your best work.",
+        body: "Don't worry — the coworking areas are well-equipped to help you do your best work, and you'll get a fresh shot at a desk next half.",
       };
   }
 }
@@ -98,7 +98,7 @@ export default function App() {
   const employee = EMPLOYEES.find(e => e.id === selectedId)!;
   const qualified = employee.days >= THRESHOLD_DAYS;
   const delta = Math.abs(employee.days - THRESHOLD_DAYS);
-  const banner = getBanner(getPlacement(employee.days), delta);
+  const hero = getHeroMessage(getPlacement(employee.days), delta);
 
   return (
     <Theme accentColor="blue" grayColor="slate" radius="full" scaling="100%" appearance="light">
@@ -156,61 +156,65 @@ export default function App() {
         </div>
 
         {/* Status card */}
-        <Card size="2" className="ds-status-card">
-          <Flex direction="column" gap="3">
-            {/* Placement banner */}
-            <Callout.Root color={qualified ? 'green' : 'orange'} variant="soft" size="2" className="ds-banner">
-              <Callout.Icon>
-                <Icon name={banner.icon} size={20} />
-              </Callout.Icon>
-              <Callout.Text size="3" weight="bold">{banner.title}</Callout.Text>
-              <Callout.Text size="2">{banner.body}</Callout.Text>
-            </Callout.Root>
+        <Box className="card-glass ds-status-card">
+          <Flex direction="column" align="center" gap="2" className="card-tile ds-hero-card">
+            {/* Fallback reserves the same box, so nothing shifts when the chunk arrives */}
+            <Suspense fallback={<div className="ds-hero-illustration" aria-hidden="true" />}>
+              <HeroIllustration />
+            </Suspense>
+            <Heading as="h2" size="6" align="center">{hero.title}</Heading>
+            <Text as="p" size="3" color="gray" align="center" className="ds-hero-body">
+              {hero.body}
+            </Text>
 
-            {/* Custom SVG gauge — see GaugeChart.tsx */}
-            <Box className="ds-section-card ds-gauge-card">
-              <DeskGauge
-                key={selectedId}
-                currentDays={employee.days}
-                totalDays={TOTAL_DAYS}
-                thresholdDays={THRESHOLD_DAYS}
-                qualified={qualified}
-              />
-            </Box>
+            <BottomSheet
+              trigger={<Button size="3" className="ds-hero-action">See qualifying details</Button>}
+              title="Qualifying details"
+              description={`How your Q2 attendance measured up against the ${THRESHOLD_DAYS}-day minimum.`}
+            >
+              {/* Custom SVG gauge — see GaugeChart.tsx. Mounts with the sheet, so the fill animates on every open. */}
+              <Box className="card-tile ds-gauge-card">
+                <DeskGauge
+                  currentDays={employee.days}
+                  totalDays={TOTAL_DAYS}
+                  thresholdDays={THRESHOLD_DAYS}
+                  qualified={qualified}
+                />
+              </Box>
 
-            {/* Evaluation details */}
-            <Box className="ds-section-card ds-info-card">
-              <Grid className="ds-info-grid">
-                <Box className="ds-info-cell">
-                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                    Evaluation period
-                  </Text>
-                  <Text size="2" weight="medium">Apr 1 – Jun 30, 2025</Text>
-                </Box>
-                <Box className="ds-info-cell">
-                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                    Period length
-                  </Text>
-                  <Text size="2" weight="medium">{TOTAL_DAYS} days total</Text>
-                </Box>
-                <Box className="ds-info-cell">
-                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                    Min. requirement
-                  </Text>
-                  <Text size="2" weight="medium">{THRESHOLD_DAYS} days in office</Text>
-                </Box>
-                <Box className="ds-info-cell">
-                  <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                    Days logged
-                  </Text>
-                  <Text size="2" weight="medium" color={qualified ? 'green' : 'orange'}>
-                    {employee.days} / {TOTAL_DAYS} days
-                  </Text>
-                </Box>
-              </Grid>
-            </Box>
+              <Box className="card-tile ds-info-card">
+                <Grid className="ds-info-grid">
+                  <Box className="ds-info-cell">
+                    <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Evaluation period
+                    </Text>
+                    <Text size="2" weight="medium">Apr 1 – Jun 30, 2025</Text>
+                  </Box>
+                  <Box className="ds-info-cell">
+                    <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Period length
+                    </Text>
+                    <Text size="2" weight="medium">{TOTAL_DAYS} days total</Text>
+                  </Box>
+                  <Box className="ds-info-cell">
+                    <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Min. requirement
+                    </Text>
+                    <Text size="2" weight="medium">{THRESHOLD_DAYS} days in office</Text>
+                  </Box>
+                  <Box className="ds-info-cell">
+                    <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                      Days logged
+                    </Text>
+                    <Text size="2" weight="medium" color={qualified ? 'green' : 'orange'}>
+                      {employee.days} / {TOTAL_DAYS} days
+                    </Text>
+                  </Box>
+                </Grid>
+              </Box>
+            </BottomSheet>
           </Flex>
-        </Card>
+        </Box>
 
         <Separator size="4" my="4" style={{ background: 'transparent' }} />
 

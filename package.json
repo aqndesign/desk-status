@@ -12,6 +12,8 @@
     "@fontsource/sora": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
     "@radix-ui/themes": "^3.3.0",
+    "lottie-web": "^5.13.0",
+    "radix-ui": "^1.6.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

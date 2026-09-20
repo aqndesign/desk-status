@@ -133,17 +133,37 @@ h4.rt-Heading {
   box-shadow: none !important;
 }
 
+/* Glass card — primary container over the blob background. Same spec as
+   org-space-manager's GLASS_CARD_STYLE: 72% white, light-catching 0.5px edges
+   (brightest top-left), inset top highlight, no outer drop shadow. Apply to a
+   Box, not a Radix Card — Card paints an opaque panel on ::before. */
 .card-glass {
-  background:        rgba(255, 255, 255, 0.80);
+  background:        rgba(255, 255, 255, 0.72);
   backdrop-filter:         blur(28px) saturate(1.8) brightness(1.04);
   -webkit-backdrop-filter: blur(28px) saturate(1.8) brightness(1.04);
-  border:       0.5px solid rgba(255, 255, 255, 0.75);
+  border-top:    0.5px solid rgba(255, 255, 255, 0.88);
+  border-left:   0.5px solid rgba(255, 255, 255, 0.72);
+  border-right:  0.5px solid rgba(255, 255, 255, 0.42);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.32);
   border-radius: 20px;
   overflow:      hidden;
-  /* !important: must beat the .rt-BaseCard reset above when applied to a Radix Card */
-  box-shadow:
-    0 2px 23px rgba(0, 0, 0, 0.054),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  box-shadow:    inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+/* Tile — solid white panel inside a glass card. Its edge follows the same
+   construction as .card-glass (0.5px, per-side alphas, light from top-left),
+   but in the shade tone since white-on-white would vanish: faintest on the lit
+   top-left, strongest bottom-right, centred on the #D9D9E0 hairline strength.
+   padding-box clip lets the border overlay the glass behind it, so it picks
+   up the blob tint instead of reading as a flat gray line. */
+.card-tile {
+  background: white;
+  background-clip: padding-box;
+  border-top:    0.5px solid rgba(28, 32, 36, 0.07);
+  border-left:   0.5px solid rgba(28, 32, 36, 0.09);
+  border-right:  0.5px solid rgba(28, 32, 36, 0.13);
+  border-bottom: 0.5px solid rgba(28, 32, 36, 0.16);
+  border-radius: 12px;
 }
 
 .card-interactive {
@@ -787,28 +807,197 @@ button:focus-visible,
   flex-wrap: wrap;
 }
 
-/* Status card — translucent, borderless container for the sections below.
-   Radix paints the card panel on ::before (--card-background-color) and the
-   border as a box-shadow on ::after, so both are overridden via their vars. */
+/* Status card — a .card-glass holding tiles, so 16px padding */
 .ds-status-card {
-  --card-padding: 16px;
-  --card-border-radius: 24px;
-  --card-background-color: rgba(255, 255, 255, 0.45);
-  --backdrop-filter-panel: blur(24px) saturate(1.6);
-  --base-card-surface-box-shadow: none !important;
-  --base-card-surface-hover-box-shadow: none !important;
-  box-shadow: 0 8px 32px rgba(28, 32, 36, 0.06) !important;
+  padding: 16px;
 }
 
-/* Placement banner at the top of the status card */
-.ds-banner {
-  border-radius: 14px;
-  row-gap: 4px;
+/* Hero card — illustration, placement message and the details action */
+.ds-hero-card {
+  border-radius: 16px;
+  padding: 16px 24px 28px;
 }
 
-/* White sub-cards inside the status card */
-.ds-section-card {
-  background: white;
+/* 320px on desktop, scaling with the viewport below that so it keeps the same
+   proportion to the card on phones (62vw ≈ 232px at 375). The aspect ratio
+   matches the 500×500 Lottie comp so the space is reserved before it mounts. */
+.ds-hero-illustration {
+  width: clamp(200px, 62vw, 320px);
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+/* Even out the centred lines so no single word is stranded on the last one */
+.ds-hero-card .rt-Heading {
+  text-wrap: balance;
+}
+
+.ds-hero-body {
+  max-width: 46ch;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+/* Same column width as the illustration; full width once the card is narrower */
+.ds-hero-action {
+  width: 100%;
+  max-width: 320px;
+  margin-top: 16px;
+}
+
+/* Illustration entry — runs once in CSS, independent of the Lottie timeline
+   (which is a seamless loop, so entry keyframes there would replay every 5s).
+   The layer classes come from `cl` in developer.json. Each stage starts at a
+   fraction of the one before it:
+     foreground  four elements, each fading in while scaling 85% → 100% with
+                 ease-in-out, and starting at 75% of the previous one:
+                 desk → right CPU box → left CPU box → plant
+     person      fades in at 75% of the whole foreground sequence
+     background  fades in at 60% of the person
+     chair       fades in at 80% of the person */
+.ds-hero-illustration {
+  --entry-fg: 250ms;
+  --entry-fg-stagger: 0.75;
+  --entry-fg-count: 4;
+  --entry-fg-total: calc(var(--entry-fg) * (1 + (var(--entry-fg-count) - 1) * var(--entry-fg-stagger)));
+  --entry-fade: 250ms;
+  --entry-person-delay: calc(var(--entry-fg-total) * 0.75);
+  --entry-bg-delay: calc(var(--entry-person-delay) + var(--entry-fade) * 0.6);
+  --entry-chair-delay: calc(var(--entry-person-delay) + var(--entry-fade) * 0.8);
+}
+
+/* --i is the element's place in the sequence. Each one scales from the middle
+   of its own base on the floor line (in the comp's 500×500 units), so it grows
+   in place rather than sliding. These layers carry only a translation from
+   Lottie, so setting an origin is safe alongside it. */
+.ds-hero-illustration .lottie-fg {
+  transform-box: view-box;
+  animation: hero-pop-in var(--entry-fg) ease-in-out
+    calc(var(--entry-fg) * var(--entry-fg-stagger) * var(--i)) both;
+}
+
+/* Desk = table + laptop + monitors: one origin so they stay on the desktop */
+.ds-hero-illustration .lottie-fg-desk      { --i: 0; transform-origin: 253px 444px; }
+.ds-hero-illustration .lottie-fg-cpu-right { --i: 1; transform-origin: 402px 446px; }
+.ds-hero-illustration .lottie-fg-cpu-left  { --i: 2; transform-origin: 118px 445px; }
+.ds-hero-illustration .lottie-fg-plant     { --i: 3; transform-origin: 48px 444px; }
+
+.ds-hero-illustration .lottie-person {
+  animation: hero-fade-in var(--entry-fade) ease-out var(--entry-person-delay) both;
+}
+
+.ds-hero-illustration .lottie-bg {
+  animation: hero-fade-in var(--entry-fade) ease-out var(--entry-bg-delay) both;
+}
+
+.ds-hero-illustration .lottie-chair {
+  animation: hero-fade-in var(--entry-fade) ease-out var(--entry-chair-delay) both;
+}
+
+/* `scale`, not `transform`: Lottie owns each layer's transform attribute */
+@keyframes hero-pop-in {
+  from { scale: 0.85; opacity: 0; }
+  to   { scale: 1;    opacity: 1; }
+}
+
+@keyframes hero-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* The global reduced-motion rule zeroes durations but not delays, which would
+   leave layers hidden and then popping in; skip the entry outright instead */
+@media (prefers-reduced-motion: reduce) {
+  .ds-hero-illustration [class^="lottie-"] {
+    animation: none;
+  }
+}
+
+/* ─── Bottom sheet (components/BottomSheet.tsx) ──────────────────────────── */
+
+.bottom-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(28, 32, 36, 0.4);
+  animation: sheet-overlay-in 350ms ease-in-out;
+}
+
+/* Exit must be a keyframe animation: Radix waits for animationend to unmount */
+.bottom-sheet-overlay[data-state="closed"] {
+  animation: sheet-overlay-out 250ms ease-in forwards;
+}
+
+/* Glass surface holding .card-tile children, docked to the bottom edge and
+   capped to the page column on wide screens */
+.bottom-sheet {
+  position: fixed;
+  z-index: 51;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 580px;
+  max-height: min(88dvh, 820px);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  /* More opaque than .card-glass: it sits over the dimmed overlay, not the blobs */
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter:         blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  border-top: 0.5px solid rgba(255, 255, 255, 0.88);
+  border-radius: 20px 20px 0 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 -8px 40px rgba(28, 32, 36, 0.14);
+  animation: sheet-in 350ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.bottom-sheet[data-state="closed"] {
+  animation: sheet-out 250ms ease-in forwards;
+}
+
+.bottom-sheet:focus {
+  outline: none;
+}
+
+.bottom-sheet-header {
+  padding: 0 4px 16px;
+}
+
+.bottom-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes sheet-out {
+  from { transform: translateY(0); }
+  to   { transform: translateY(100%); }
+}
+
+@keyframes sheet-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sheet-overlay-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Both tiles are full-width panels, so they take the larger 16px radius */
+.ds-gauge-card,
+.ds-info-card {
   border-radius: 16px;
 }
 
@@ -875,4 +1064,5 @@ button:focus-visible,
 /* Responsive */
 @media (max-width: 500px) {
   .ds-info-grid { grid-template-columns: 1fr; }
+  .ds-hero-card { padding: 8px 16px 20px; }
 }
