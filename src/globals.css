@@ -818,97 +818,110 @@ button:focus-visible,
   padding: 16px 24px 28px;
 }
 
-/* 320px on desktop, scaling with the viewport below that so it keeps the same
-   proportion to the card on phones (62vw ≈ 232px at 375). The aspect ratio
-   matches the 500×500 Lottie comp so the space is reserved before it mounts. */
+/* 320px, centred in the card with the text beneath it left-aligned. The
+   aspect ratio matches the square Lottie comps, so the space is reserved
+   before the animation mounts. --illustration-scale enlarges one illustration
+   relative to that base. Phones replace this sizing entirely: there the
+   illustration flexes to the height left over (see "Mobile" at the end). */
 .ds-hero-illustration {
-  width: clamp(200px, 62vw, 320px);
+  --illustration-scale: 1;
+  align-self: center;
+  width: calc(320px * var(--illustration-scale));
   max-width: 100%;
   aspect-ratio: 1 / 1;
+  /* 24px to the heading, with the card's 8px gap */
+  margin-bottom: 16px;
 }
 
-/* Even out the centred lines so no single word is stranded on the last one */
-.ds-hero-card .rt-Heading {
-  text-wrap: balance;
+/* The coworking scene has more empty margin inside its frame than the desk one */
+.ds-hero-illustration--coworking {
+  --illustration-scale: 1.1;
 }
 
+/* Avoid stranding a single word on the last line */
+.ds-hero-card .rt-Heading,
 .ds-hero-body {
-  max-width: 46ch;
-  line-height: 1.5;
   text-wrap: pretty;
 }
 
-/* Same column width as the illustration; full width once the card is narrower */
-.ds-hero-action {
-  width: 100%;
-  max-width: 320px;
-  margin-top: 16px;
+.ds-hero-body {
+  line-height: 1.5;
 }
 
-/* Illustration entry — runs once in CSS, independent of the Lottie timeline
-   (which is a seamless loop, so entry keyframes there would replay every 5s).
-   The layer classes come from `cl` in developer.json. Each stage starts at a
-   fraction of the one before it:
-     foreground  four elements, each fading in while scaling 85% → 100% with
-                 ease-in-out, and starting at 75% of the previous one:
-                 desk → right CPU box → left CPU box → plant
-     person      fades in at 75% of the whole foreground sequence
-     background  fades in at 60% of the person
-     chair       fades in at 80% of the person */
+/* Benefits list under the hero message */
+.ds-benefits {
+  margin-top: 12px;
+}
+
+/* Neutral, so the icons support the text rather than compete with the
+   illustration and the action button for the brand blue */
+.ds-benefit-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--gray-3);
+  color: var(--gray-11);
+  font-size: 18px;
+}
+
+/* Primary and secondary actions. They span the text column, so they line up
+   with the left-aligned copy above; 40px clear of it with the card's 8px gap. */
+.ds-hero-actions {
+  margin-top: 32px;
+}
+
+/* Fine print under the status card */
+.ds-footnote {
+  margin-top: 33px;
+  padding-inline: 8px;
+  line-height: 1.6;
+}
+
+/* Illustration entry — two steps, run once in CSS and independent of the
+   Lottie timeline (a seamless loop, so entry keyframes there would replay
+   every loop):
+     1. everything except the second-step layers fades in together while
+        sliding up 24px
+     2. layers tagged `lottie-enter-2` (via `cl` in the Lottie JSON) then fade
+        in while sliding down 24px — the gray backdrop in the desk
+        illustration, the freestanding decor in the coworking one */
 .ds-hero-illustration {
-  --entry-fg: 250ms;
-  --entry-fg-stagger: 0.75;
-  --entry-fg-count: 4;
-  --entry-fg-total: calc(var(--entry-fg) * (1 + (var(--entry-fg-count) - 1) * var(--entry-fg-stagger)));
-  --entry-fade: 250ms;
-  --entry-person-delay: calc(var(--entry-fg-total) * 0.75);
-  --entry-bg-delay: calc(var(--entry-person-delay) + var(--entry-fade) * 0.6);
-  --entry-chair-delay: calc(var(--entry-person-delay) + var(--entry-fade) * 0.8);
+  --entry-duration: 350ms;
+  /* ease-in-out is (0.42, 0, 0.58, 1); the end handle is pulled 15 points
+     further in (0.58 → 0.43) for a longer, flatter deceleration */
+  --entry-ease: cubic-bezier(0.42, 0, 0.43, 1);
+  /* 24px on screen at the 320px design width, converted into the comp's own
+     units (LottiePlayer supplies its width), so the travel shrinks in
+     proportion with the artwork on smaller screens. */
+  --entry-slide: calc(24px * var(--lottie-comp-width, 500) / (320 * var(--illustration-scale)));
 }
 
-/* --i is the element's place in the sequence. Each one scales from the middle
-   of its own base on the floor line (in the comp's 500×500 units), so it grows
-   in place rather than sliding. These layers carry only a translation from
-   Lottie, so setting an origin is safe alongside it. */
-.ds-hero-illustration .lottie-fg {
-  transform-box: view-box;
-  animation: hero-pop-in var(--entry-fg) ease-in-out
-    calc(var(--entry-fg) * var(--entry-fg-stagger) * var(--i)) both;
+/* Step 1 animates Lottie's root group, not each foreground layer: a single
+   opacity over the whole group, so overlapping layers (legs over the chair,
+   desk over the legs) never show through each other mid-fade. Second-step
+   layers are inside that group but hold at opacity 0 until their own step. */
+.ds-hero-illustration svg > g {
+  --entry-from: var(--entry-slide);
+  animation: hero-slide-in var(--entry-duration) var(--entry-ease) both;
 }
 
-/* Desk = table + laptop + monitors: one origin so they stay on the desktop */
-.ds-hero-illustration .lottie-fg-desk      { --i: 0; transform-origin: 253px 444px; }
-.ds-hero-illustration .lottie-fg-cpu-right { --i: 1; transform-origin: 402px 446px; }
-.ds-hero-illustration .lottie-fg-cpu-left  { --i: 2; transform-origin: 118px 445px; }
-.ds-hero-illustration .lottie-fg-plant     { --i: 3; transform-origin: 48px 444px; }
-
-.ds-hero-illustration .lottie-person {
-  animation: hero-fade-in var(--entry-fade) ease-out var(--entry-person-delay) both;
+.ds-hero-illustration .lottie-enter-2 {
+  --entry-from: calc(var(--entry-slide) * -1);
+  animation: hero-slide-in var(--entry-duration) var(--entry-ease) var(--entry-duration) both;
 }
 
-.ds-hero-illustration .lottie-bg {
-  animation: hero-fade-in var(--entry-fade) ease-out var(--entry-bg-delay) both;
-}
-
-.ds-hero-illustration .lottie-chair {
-  animation: hero-fade-in var(--entry-fade) ease-out var(--entry-chair-delay) both;
-}
-
-/* `scale`, not `transform`: Lottie owns each layer's transform attribute */
-@keyframes hero-pop-in {
-  from { scale: 0.85; opacity: 0; }
-  to   { scale: 1;    opacity: 1; }
-}
-
-@keyframes hero-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+/* `translate`, not `transform`: Lottie owns each layer's transform attribute */
+@keyframes hero-slide-in {
+  from { opacity: 0; translate: 0 var(--entry-from); }
+  to   { opacity: 1; translate: 0 0; }
 }
 
 /* The global reduced-motion rule zeroes durations but not delays, which would
-   leave layers hidden and then popping in; skip the entry outright instead */
+   leave second-step layers hidden and then popping in; skip the entry outright */
 @media (prefers-reduced-motion: reduce) {
-  .ds-hero-illustration [class^="lottie-"] {
+  .ds-hero-illustration svg > g,
+  .ds-hero-illustration .lottie-enter-2 {
     animation: none;
   }
 }
@@ -973,6 +986,12 @@ button:focus-visible,
   gap: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* Tall content must scroll the body, not get squashed: a tile with
+   overflow: hidden would otherwise be shrunk below its content and clipped */
+.bottom-sheet-body > * {
+  flex-shrink: 0;
 }
 
 @keyframes sheet-in {
@@ -1044,6 +1063,181 @@ button:focus-visible,
   letter-spacing: 0.01em;
 }
 
+/* ─── Leaderboard (components/Leaderboard.tsx) ───────────────────────────── */
+
+/* "Your standing" summary above the list */
+.lb-summary {
+  border-radius: 16px;
+  padding: 16px 20px;
+}
+
+.lb-summary-rank {
+  flex-shrink: 0;
+  min-width: 64px;
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.lb-summary-rank .rt-Text {
+  margin-top: 6px;
+  font-family: var(--default-font-family);
+  letter-spacing: 0;
+}
+
+.lb-tier-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-accent);
+  animation: lb-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 500ms both;
+}
+
+.lb-list {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* --i is the row's place in the ranking; each row enters a beat after the
+   one above it, and its bar starts growing shortly after the row lands */
+.lb-row {
+  display: grid;
+  grid-template-columns: 24px auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  animation: lb-row-in 350ms cubic-bezier(0.42, 0, 0.43, 1) calc(var(--i) * var(--lb-stagger) + 120ms) both;
+}
+
+.lb-row + .lb-row {
+  border-top: 1px solid var(--gray-4);
+}
+
+.lb-row.is-you {
+  background: color-mix(in srgb, var(--color-accent) 7%, white);
+}
+
+.lb-rank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-11);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Gold, silver and bronze chips pop in with a little overshoot */
+.lb-rank[data-medal] {
+  animation: lb-pop 450ms cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--i) * var(--lb-stagger) + 350ms) both;
+}
+.lb-rank[data-medal="1"] { background: #F5B301; color: #4A3600; }
+.lb-rank[data-medal="2"] { background: #C3CBD6; color: #2F3945; }
+.lb-rank[data-medal="3"] { background: #DDA36A; color: #4E2C0C; }
+
+/* The leader wears a crown: it drops onto the avatar, then settles at a tilt */
+.lb-avatar {
+  position: relative;
+  display: flex;
+}
+
+.lb-crown {
+  position: absolute;
+  top: -9px;
+  right: -5px;
+  color: #F5B301;
+  rotate: 24deg;
+  filter: drop-shadow(0 1px 0 white);
+  animation: lb-crown-drop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) 700ms both;
+}
+
+.lb-days {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-bar {
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--gray-3);
+  overflow: hidden;
+}
+
+/* --fill is days ÷ period length. The bar is laid out at full size and scaled
+   in from the left, so the growth stays on the compositor. */
+.lb-bar-fill {
+  width: calc(var(--fill) * 100%);
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--color-accent) 35%, white);
+  transform-origin: left;
+  animation: lb-bar-grow 800ms cubic-bezier(0.22, 1, 0.36, 1) calc(var(--i) * var(--lb-stagger) + var(--lb-bars-start)) both;
+}
+
+.lb-row.is-you .lb-bar-fill {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-accent);
+}
+
+/* A single shine sweeps across the employee's own bar once it has grown */
+.lb-row.is-you .lb-bar-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  translate: -100% 0;
+  animation: lb-shine 900ms ease-out calc(var(--i) * var(--lb-stagger) + var(--lb-bars-start) + 700ms) both;
+}
+
+@keyframes lb-row-in {
+  from { opacity: 0; translate: 0 8px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes lb-bar-grow {
+  from { scale: 0 1; }
+  to   { scale: 1 1; }
+}
+
+@keyframes lb-pop {
+  from { scale: 0; }
+  to   { scale: 1; }
+}
+
+@keyframes lb-crown-drop {
+  from { opacity: 0; translate: 0 -14px; rotate: -20deg; }
+  to   { opacity: 1; translate: 0 0;     rotate: 24deg; }
+}
+
+@keyframes lb-shine {
+  from { translate: -100% 0; }
+  to   { translate: 100% 0; }
+}
+
+/* The global reduced-motion rule zeroes durations but not delays, which would
+   leave rows hidden and then popping in one by one; show everything at once */
+@media (prefers-reduced-motion: reduce) {
+  .lb-row,
+  .lb-rank[data-medal],
+  .lb-bar-fill,
+  .lb-bar-fill::after,
+  .lb-tier-icon,
+  .lb-crown {
+    animation: none;
+  }
+}
+
 /* Info grid — 2-column table of evaluation details */
 .ds-info-grid {
   display: grid;
@@ -1061,8 +1255,169 @@ button:focus-visible,
   gap: 4px;
 }
 
-/* Responsive */
-@media (max-width: 500px) {
-  .ds-info-grid { grid-template-columns: 1fr; }
-  .ds-hero-card { padding: 8px 16px 20px; }
+/* ─── Mobile ─────────────────────────────────────────────────────────────── */
+
+/* Phones: below Radix Themes' `xs` breakpoint (MOBILE_QUERY in lib/breakpoints.ts).
+
+   The first screen is budgeted as one unit so the card's buttons stay above
+   the fold: the page is exactly one visible screen tall, the chrome and type
+   tighten, and the illustration takes whatever height is left over instead of
+   claiming a fixed size. `svh` is the height with the browser's toolbars
+   showing, so the fit holds before the page has been scrolled. */
+@media (max-width: 519px) {
+  :root {
+    --ds-header-h: 52px;
+  }
+
+  .ds-header {
+    height: var(--ds-header-h);
+  }
+
+  .ds-header-inner {
+    height: 100%;
+    padding: 0 16px;
+  }
+
+  .ds-main {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - var(--ds-header-h));
+    min-height: calc(100svh - var(--ds-header-h));
+    padding: 12px 12px 16px;
+  }
+
+  /* The scenario switcher is labelled for assistive tech via aria-label */
+  .ds-scenario-bar {
+    margin-bottom: 10px;
+  }
+
+  .ds-scenario-bar > .rt-Text {
+    display: none;
+  }
+
+  .ds-scenario-bar .rt-SegmentedControlRoot {
+    width: 100%;
+  }
+
+  /* Card and tile stretch to the bottom of the first screen. A thinner glass
+     rim gives the text more width, so it wraps onto fewer lines.
+     overflow: .card-glass clips its children, which would also confine the
+     sticky actions below to the card rather than the viewport. */
+  .ds-status-card {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    overflow: visible;
+  }
+
+  .ds-hero-card {
+    flex: 1 0 auto;
+    padding: 8px 16px 12px;
+  }
+
+  /* The flexible element: grows and shrinks with the space left over. The
+     view is cropped to the artwork on phones (LottiePlayer's artBounds), so
+     the art fills this box. The <svg> is positioned rather than sized in
+     percentages because the box's height comes from flex. */
+  .ds-hero-illustration {
+    position: relative;
+    align-self: stretch;
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    /* The smallest it may get before the page scrolls instead */
+    min-height: 128px;
+    aspect-ratio: auto;
+    /* 16px to the heading, with the card's 8px gap */
+    margin-bottom: 8px;
+  }
+
+  /* overflow: layers sliding in during the entry may start outside the crop */
+  .ds-hero-illustration svg {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+  }
+
+  /* Benefits: the icon moves inline with the title so the description can use
+     the full width, which saves a line or more per item */
+  .ds-benefits {
+    margin-top: 4px;
+  }
+
+  .ds-benefits li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 2px 8px;
+  }
+
+  .ds-benefits li > .rt-Box {
+    display: contents;
+  }
+
+  .ds-benefits li p:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .ds-benefit-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    font-size: 14px;
+  }
+
+  /* Actions sit 24px below the text. If the content is taller than the
+     screen, they pin to its bottom edge and the content scrolls beneath, so
+     they are never pushed below the fold; when everything fits, sticky does
+     nothing. The block bleeds to the tile's edges to cover what passes under. */
+  .ds-hero-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 8px -16px -12px;
+    padding: 8px 16px 12px;
+    border-radius: 0 0 16px 16px;
+    background: white;
+  }
+
+  /* Text scrolling underneath dissolves rather than being cut off */
+  .ds-hero-actions::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    left: 0;
+    height: 16px;
+    background: linear-gradient(to top, white, transparent);
+    pointer-events: none;
+  }
+
+  .ds-footnote {
+    margin-top: 12px;
+  }
+
+  /* Long message (the coworking one, with its benefits list): the fine print
+     gives up its place in the first-screen budget and hangs just below the
+     fold, so the card ends exactly at the bottom of the screen and the
+     illustration gets all the spare height. A short message has room to keep
+     the fine print in view. */
+  .ds-main--long {
+    position: relative;
+    padding-bottom: 8px;
+  }
+
+  .ds-main--long .ds-footnote {
+    position: absolute;
+    top: 100%;
+    right: 12px;
+    left: 12px;
+    margin-top: 4px;
+    padding-bottom: 16px;
+  }
+
+  .ds-info-grid {
+    grid-template-columns: 1fr;
+  }
 }
