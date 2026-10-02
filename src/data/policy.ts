@@ -20,8 +20,6 @@ export type StatusDays = Record<StatusId, number>;
 
 export interface StatusDefinition {
   id: StatusId;
-  /** Short label, as it appears on a day in the status history */
-  tag: string;
   /** Full name of the status */
   name: string;
   /** What the status covers */
@@ -61,7 +59,6 @@ export const EVALUATION = {
 export const STATUSES: Record<StatusId, StatusDefinition> = {
   'assigned-office': {
     id: 'assigned-office',
-    tag: 'Assigned office',
     name: 'Work from assigned office',
     definition:
       'Working at your assigned Meta building. A building within a connected group of buildings counts as your assigned building; for example MPK10–18 and MPK20–21.',
@@ -69,7 +66,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   'walkable-office': {
     id: 'walkable-office',
-    tag: 'Walkable office',
     name: 'Work from a walkable office',
     definition:
       'Working at another walkable Meta office within your assigned site, such as MPK; 50HY/Farley; NY770; Sunnyvale; Burlingame; Fremont; Bellevue; Redmond; or Seattle (excludes Stadium).',
@@ -77,7 +73,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   'ipt-other': {
     id: 'ipt-other',
-    tag: 'IPT others',
     name: 'Miscellaneous IPT statuses',
     definition:
       'Other qualifying IPT statuses, including family sick time, PTO – statutory entitlement, voting time off, bereavement (hourly), jury or witness duty, calendar block (non-work day) and holidays.',
@@ -85,7 +80,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   'wfh-unforeseen': {
     id: 'wfh-unforeseen',
-    tag: 'Unforeseen circumstances',
     name: 'Work from home (unforeseen circumstances)',
     definition:
       'For example, recovering from illness, dangerous commute conditions, or caring for a family member.',
@@ -93,7 +87,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   'pto-choice-sick': {
     id: 'pto-choice-sick',
-    tag: 'PTO + Choice + Sick',
     name: 'PTO, Choice days and sick time',
     definition:
       'Paid time off, Choice days and personal sick time are counted together as non-working time.',
@@ -101,7 +94,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   'global-travel': {
     id: 'global-travel',
-    tag: 'Global travel days',
     name: 'Global travel days',
     definition:
       'International: personal travel days spent working in another unrestricted country where you have work authorization. Domestic: personal travel days spent working from a location outside your assigned office region.',
@@ -109,7 +101,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   drive: {
     id: 'drive',
-    tag: 'Drive',
     name: 'Work from a drivable Meta office',
     definition:
       'A Meta location within drivable distance: in the same state and with the same region code as your assigned office.',
@@ -117,7 +108,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   fly: {
     id: 'fly',
-    tag: 'Fly',
     name: 'Work from a fly-in Meta office',
     definition:
       "A Meta location that isn't your assigned building, site or a geographically colocated site — somewhere you would fly to — for a business reason.",
@@ -125,7 +115,6 @@ export const STATUSES: Record<StatusId, StatusDefinition> = {
   },
   'non-meta-business': {
     id: 'non-meta-business',
-    tag: 'Non-Meta location (business)',
     name: 'Non-Meta location (business reason)',
     definition:
       'For example, attending a client event, travelling for work, or when your assigned office is closed or temporarily unavailable.',

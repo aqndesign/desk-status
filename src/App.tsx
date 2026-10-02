@@ -5,7 +5,6 @@ import {
   Box,
   Text,
   Heading,
-  Badge,
   Button,
   SegmentedControl,
   Grid,
@@ -97,28 +96,6 @@ export default function App() {
         <div className="ds-blob ds-blob-2" />
         <div className="ds-blob ds-blob-3" />
       </div>
-
-      {/* Header */}
-      <header className="ds-header">
-        <div className="ds-header-inner">
-          <Flex align="center" gap="3">
-            <Box style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: 'var(--accent-9)',
-              color: 'var(--accent-contrast)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: '0 2px 10px color-mix(in srgb, var(--accent-9) 40%, transparent)',
-            }}>
-              <Icon name="desk-chair" size={18} />
-            </Box>
-            <Heading size="3">Desk Status</Heading>
-          </Flex>
-          <Badge color="blue" variant="soft" radius="full">
-            {EVALUATION.half} Evaluation
-          </Badge>
-        </div>
-      </header>
 
       {/* Main */}
       {/* A message with a benefits list is long enough to need the whole first screen on phones */}

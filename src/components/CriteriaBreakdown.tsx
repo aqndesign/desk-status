@@ -113,7 +113,6 @@ function Group({ group, result, days: logged }: { group: CriteriaGroup; result: 
               </Accordion.Header>
               <Accordion.Content className="ds-crit-def">
                 <div className="ds-crit-def-inner">
-                  <Badge size="1" color="gray" variant="soft" radius="full">{status.tag}</Badge>
                   <Text as="p" size="2" color="gray">{status.definition}</Text>
                 </div>
               </Accordion.Content>
