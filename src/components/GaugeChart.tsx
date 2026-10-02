@@ -70,7 +70,7 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
           width={width}
           height={svgHeight}
           role="img"
-          aria-label={`${currentDays} of ${totalDays} days in office — minimum ${thresholdDays}`}
+          aria-label={`${currentDays} of ${totalDays} qualifying days — minimum ${thresholdDays}`}
         >
           {/* Track */}
           <path d={arcPath} fill="none" stroke="#E8E8EC" strokeWidth={ARC_WIDTH} />
@@ -117,14 +117,14 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
             fill="#60646C" fontSize="14"
             fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
           >
-            days in office
+            qualifying days
           </text>
 
           {/* Scale endpoint labels, centered under the arc ends */}
           <text
             x={(cx - rMid).toFixed(1)} y={(cy + 24).toFixed(1)}
             textAnchor="middle"
-            fill="#94A3B8" fontSize="11"
+            fill="#60646C" fontSize="11"
             fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
           >
             0
@@ -132,7 +132,7 @@ export function DeskGauge({ currentDays, totalDays, thresholdDays, qualified }: 
           <text
             x={(cx + rMid).toFixed(1)} y={(cy + 24).toFixed(1)}
             textAnchor="middle"
-            fill="#94A3B8" fontSize="11"
+            fill="#60646C" fontSize="11"
             fontFamily="var(--font-source-sans-3), system-ui, sans-serif"
           >
             {totalDays}

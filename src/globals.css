@@ -813,29 +813,26 @@ button:focus-visible,
 }
 
 /* Hero card — illustration, placement message and the details action */
+/* The side padding sets one column for the illustration, text and buttons */
 .ds-hero-card {
   border-radius: 16px;
-  padding: 16px 24px 28px;
+  padding: 32px 40px 40px;
 }
 
-/* 320px, centred in the card with the text beneath it left-aligned. The
-   aspect ratio matches the square Lottie comps, so the space is reserved
-   before the animation mounts. --illustration-scale enlarges one illustration
-   relative to that base. Phones replace this sizing entirely: there the
-   illustration flexes to the height left over (see "Mobile" at the end). */
+/* Spans the column. The view is cropped to the drawing (LottiePlayer's
+   artBounds) and the box takes the crop's aspect ratio, so the drawing's left
+   and right edges are the column's, and the text below lines up with them.
+   The ratio also reserves the space before the animation mounts. Phones
+   replace this sizing: there the illustration flexes to the height left over
+   (see "Mobile" at the end). */
 .ds-hero-illustration {
-  --illustration-scale: 1;
-  align-self: center;
-  width: calc(320px * var(--illustration-scale));
-  max-width: 100%;
-  aspect-ratio: 1 / 1;
-  /* 24px to the heading, with the card's 8px gap */
-  margin-bottom: 16px;
-}
-
-/* The coworking scene has more empty margin inside its frame than the desk one */
-.ds-hero-illustration--coworking {
-  --illustration-scale: 1.1;
+  width: 100%;
+  aspect-ratio: var(--lottie-aspect, 1 / 1);
+  /* Without this the flex item's automatic minimum follows the <svg>'s own
+     square size and overrides the aspect ratio */
+  min-height: 0;
+  /* 32px to the heading, with the card's 8px gap */
+  margin-bottom: 24px;
 }
 
 /* Avoid stranding a single word on the last line */
@@ -891,10 +888,10 @@ button:focus-visible,
   /* ease-in-out is (0.42, 0, 0.58, 1); the end handle is pulled 15 points
      further in (0.58 → 0.43) for a longer, flatter deceleration */
   --entry-ease: cubic-bezier(0.42, 0, 0.43, 1);
-  /* 24px on screen at the 320px design width, converted into the comp's own
-     units (LottiePlayer supplies its width), so the travel shrinks in
-     proportion with the artwork on smaller screens. */
-  --entry-slide: calc(24px * var(--lottie-comp-width, 500) / (320 * var(--illustration-scale)));
+  /* 24px on screen at the column's ~430px desktop width, converted into the
+     comp's own units (LottiePlayer supplies the cropped view's width), so the
+     travel shrinks in proportion with the artwork on smaller screens. */
+  --entry-slide: calc(24px * var(--lottie-view-width, 500) / 430);
 }
 
 /* Step 1 animates Lottie's root group, not each foreground layer: a single
@@ -1238,6 +1235,386 @@ button:focus-visible,
   }
 }
 
+/* ─── Criteria breakdown (components/CriteriaBreakdown.tsx) ──────────────── */
+
+/* --seg is the colour of whichever group or bar segment the element belongs to */
+.ds-criteria-card {
+  border-radius: 16px;
+  padding: 16px;
+}
+
+/* Composition bar: the whole evaluation period, with the minimum marked on it.
+   Bottom padding leaves room for the labels hung under the bar. */
+.ds-comp {
+  position: relative;
+  margin-top: 16px;
+  padding-bottom: 20px;
+}
+
+/* Not clipped: the segments' hit areas and tooltips reach outside the bar, so
+   the rounded ends are drawn on the first and last segment instead */
+.ds-comp-track {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--gray-4);
+}
+
+/* Segments are laid out at full size and the whole run scales in from the
+   left, so they grow together without gaps opening between them */
+.ds-comp-fill {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
+  animation: lb-bar-grow 900ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both;
+}
+
+/* --w is the segment's share of the period */
+.ds-comp-seg {
+  position: relative;
+  width: calc(var(--w) * 100%);
+  height: 100%;
+  background: var(--seg);
+  flex-shrink: 0;
+  transition: opacity 150ms ease, filter 150ms ease;
+}
+
+/* A 12px bar is too thin to aim at: the hit area reaches 10px above and below */
+.ds-comp-seg::before {
+  content: "";
+  position: absolute;
+  inset: -10px 0;
+}
+
+.ds-comp-seg:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.ds-comp-seg:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+/* 2px gap between segments, painted over the segment so widths still sum to 100% */
+.ds-comp-seg + .ds-comp-seg {
+  box-shadow: inset 2px 0 0 white;
+}
+
+/* Days over the shared limit are logged but don't count: a neutral hatch, so
+   the colour stops exactly at the counted total */
+.ds-comp-seg[data-kind="over"],
+.ds-comp-swatch[data-kind="over"] {
+  background: repeating-linear-gradient(135deg, var(--gray-8) 0 2px, var(--gray-4) 2px 5px);
+}
+
+/* Hover: the hovered segment lifts and the others recede. Hovering a legend
+   entry does the same for its segment (data-hovered is set from the component). */
+.ds-comp-track[data-hovering] .ds-comp-seg:not([data-hovered]) {
+  opacity: 0.4;
+}
+
+.ds-comp-seg[data-hovered] {
+  filter: brightness(1.08) saturate(1.1);
+}
+
+.ds-comp-seg[data-kind="none"][data-hovered] {
+  filter: brightness(0.94);
+}
+
+/* Tooltip on the hovered segment: the value leads, the name follows. It hangs
+   from the segment's midpoint; near either end of the bar it shifts sideways
+   (--tx) while its caret stays on the midpoint. */
+.ds-comp-tip {
+  --tx: -50%;
+  --caret: 50%;
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: white;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(28, 32, 36, 0.18);
+  translate: var(--tx) 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease, translate 150ms ease;
+}
+
+.ds-comp-tip strong {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-comp-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: var(--caret);
+  translate: -50% 0;
+  border: 5px solid transparent;
+  border-top-color: var(--color-primary);
+}
+
+.ds-comp-tip[data-align="start"] {
+  --tx: -12%;
+  --caret: 12%;
+}
+
+.ds-comp-tip[data-align="end"] {
+  --tx: -88%;
+  --caret: 88%;
+}
+
+.ds-comp-seg[data-hovered] .ds-comp-tip {
+  translate: var(--tx) 0;
+  opacity: 1;
+}
+
+/* The minimum: same dark tick with a white halo as on the gauge */
+.ds-comp-min {
+  position: absolute;
+  top: -4px;
+  left: calc(var(--at) * 100%);
+  width: 3px;
+  height: 20px;
+  translate: -50% 0;
+  border-radius: 2px;
+  background: #1E293B;
+  box-shadow: 0 0 0 2px white;
+}
+
+.ds-comp-min-label,
+.ds-comp-end {
+  position: absolute;
+  top: 20px;
+  font-family: var(--font-source-sans-3), system-ui, sans-serif;
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ds-comp-min-label {
+  left: calc(var(--at) * 100%);
+  translate: -50% 0;
+  font-weight: 600;
+  color: #475569;
+}
+
+.ds-comp-end {
+  right: 0;
+  color: var(--gray-11);
+}
+
+/* Entries carry 3px 6px of padding for their hover pill; the grid's gap and the
+   list's side margins give that back, so the text sits where it would without it */
+.ds-comp-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 4px;
+  margin: 9px -6px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-comp-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: 6px;
+  transition: background-color 150ms ease, opacity 150ms ease;
+}
+
+/* Mirrors the bar: the hovered entry gets a wash of its colour, the rest recede */
+.ds-comp-legend[data-hovering] .ds-comp-key:not([data-hovered]) {
+  opacity: 0.55;
+}
+
+.ds-comp-key[data-hovered] {
+  background: color-mix(in srgb, var(--seg) 10%, transparent);
+}
+
+.ds-comp-key[data-kind="none"][data-hovered] {
+  background: var(--gray-3);
+}
+
+.ds-comp-key .ds-crit-days {
+  margin-left: auto;
+}
+
+.ds-comp-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--seg);
+  flex-shrink: 0;
+}
+
+.ds-crit-days {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Each group carries a rail in its colour down its left edge, as in the
+   reference design's criteria panel */
+.ds-crit-group {
+  position: relative;
+  margin-top: 20px;
+  padding-left: 14px;
+}
+
+.ds-crit-group::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--seg);
+}
+
+.ds-crit-head {
+  padding: 0 4px 6px;
+}
+
+.ds-crit-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--seg) 12%, transparent);
+  color: var(--seg);
+  font-size: 15px;
+}
+
+.ds-crit-total {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* Shared-limit meter: how much of the cap the three statuses have used */
+.ds-crit-cap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 2px 4px 10px;
+}
+
+.ds-crit-cap-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--gray-3);
+  overflow: hidden;
+}
+
+/* --fill is logged ÷ cap, clamped; a full bar means the limit is used up */
+.ds-crit-cap-fill {
+  width: calc(var(--fill) * 100%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--seg);
+  transform-origin: left;
+  animation: lb-bar-grow 800ms cubic-bezier(0.22, 1, 0.36, 1) 400ms both;
+}
+
+.ds-crit-row + .ds-crit-row {
+  border-top: 1px solid var(--gray-4);
+}
+
+/* The global focus ring inherits its radius from the button's parent */
+.ds-crit-row-head {
+  margin: 0;
+  border-radius: 8px;
+  font: inherit;
+}
+
+/* The whole row is the disclosure button; it expands to the status definition.
+   Padding brings the row to a 44px touch target. */
+.ds-crit-trigger {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 4px;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.ds-crit-trigger:hover {
+  background: color-mix(in srgb, var(--accent-9) 6%, transparent);
+}
+
+.ds-crit-row-icon {
+  color: var(--gray-9);
+  font-size: 15px;
+}
+
+.ds-crit-trigger .uic-chevron-down {
+  color: var(--gray-9);
+  transition: transform 250ms ease;
+}
+
+.ds-crit-trigger[data-state="open"] .uic-chevron-down {
+  transform: rotate(180deg);
+}
+
+/* Radix keeps the content mounted until the close keyframes end */
+.ds-crit-def {
+  overflow: hidden;
+}
+
+.ds-crit-def[data-state="open"] {
+  animation: accordion-down 250ms ease-out;
+}
+
+.ds-crit-def[data-state="closed"] {
+  animation: accordion-up 200ms ease-in;
+}
+
+/* Indented to the row's text, under the icon column */
+.ds-crit-def-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0 4px 12px 30px;
+}
+
+.ds-crit-other {
+  margin-top: 16px;
+}
+
+/* The sum of the groups, set against the minimum */
+.ds-crit-sum {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gray-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-comp-fill,
+  .ds-crit-cap-fill {
+    animation: none;
+  }
+}
+
 /* Info grid — 2-column table of evaluation details */
 .ds-info-grid {
   display: grid;
@@ -1257,7 +1634,7 @@ button:focus-visible,
 
 /* ─── Mobile ─────────────────────────────────────────────────────────────── */
 
-/* Phones: below Radix Themes' `xs` breakpoint (MOBILE_QUERY in lib/breakpoints.ts).
+/* Phones: below Radix Themes' `xs` breakpoint (520px).
 
    The first screen is budgeted as one unit so the card's buttons stay above
    the fold: the page is exactly one visible screen tall, the chrome and type
@@ -1317,8 +1694,8 @@ button:focus-visible,
   }
 
   /* The flexible element: grows and shrinks with the space left over. The
-     view is cropped to the artwork on phones (LottiePlayer's artBounds), so
-     the art fills this box. The <svg> is positioned rather than sized in
+     view is cropped to the artwork (LottiePlayer's artBounds), so the art
+     fills this box. The <svg> is positioned rather than sized in
      percentages because the box's height comes from flex. */
   .ds-hero-illustration {
     position: relative;
@@ -1419,5 +1796,10 @@ button:focus-visible,
 
   .ds-info-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Status names are long; give them the width the legend's second column takes */
+  .ds-comp-legend {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

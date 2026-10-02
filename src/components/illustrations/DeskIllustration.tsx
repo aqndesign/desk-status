@@ -4,8 +4,10 @@ import { readAccent } from '../../lib/brand';
 import { recolorLottie, shiftLightness } from '../../lib/lottieColors';
 import { LottiePlayer } from '../LottiePlayer';
 
-// The scene fills most of its 500×500 frame
-const ART_BOUNDS = '4 22 480 460';
+// The scene fills most of its 500×500 frame. Left and right are the drawing's
+// measured extremes over the loop (the swaying plant and the tower), so the
+// card's text can align to them.
+const ART_BOUNDS = '13 22 460 460';
 
 /** Shown when the employee has an assigned desk. */
 export default function DeskIllustration({ className }: { className: string }) {

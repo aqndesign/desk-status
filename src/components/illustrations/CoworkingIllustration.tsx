@@ -48,8 +48,10 @@ function toMetaPalette(brandHue: number) {
   };
 }
 
-// The scene spans the full width of its 1080×1080 frame but only the middle three quarters of its height
-const ART_BOUNDS = '0 131 1080 825';
+// The scene spans nearly the full width of its 1080×1080 frame (measured
+// extremes, so the card's text can align to them) but only the middle three
+// quarters of its height
+const ART_BOUNDS = '8 131 1064 825';
 
 /** Shown when the employee will be seated in the coworking spaces. */
 export default function CoworkingIllustration({ className }: { className: string }) {

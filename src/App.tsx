@@ -11,9 +11,13 @@ import {
   Grid,
 } from '@radix-ui/themes';
 import { BottomSheet } from './components/BottomSheet';
+import { CriteriaBreakdown } from './components/CriteriaBreakdown';
 import { DeskGauge } from './components/GaugeChart';
 import { Leaderboard } from './components/Leaderboard';
 import { COLLEAGUES, type OrgMember } from './data/colleagues';
+import { EMPLOYEES } from './data/employees';
+import { EVALUATION } from './data/policy';
+import { evaluate } from './lib/eligibility';
 import { Icon } from './components/ui/Icon';
 
 // Each illustration loads as its own chunk (the Lottie player is shared between
@@ -21,8 +25,7 @@ import { Icon } from './components/ui/Icon';
 const DeskIllustration = lazy(() => import('./components/illustrations/DeskIllustration'));
 const CoworkingIllustration = lazy(() => import('./components/illustrations/CoworkingIllustration'));
 
-const TOTAL_DAYS = 125;
-const THRESHOLD_DAYS = 75;
+const { totalDays: TOTAL_DAYS, minimumDays: THRESHOLD_DAYS } = EVALUATION;
 
 type Placement = 'desk' | 'coworking';
 
@@ -68,52 +71,20 @@ const HERO: Record<Placement, HeroMessage> = {
   },
 };
 
-interface Employee {
-  id: string;
-  name: string;
-  initials: string;
-  role: string;
-  department: string;
-  days: number;
-}
-
-const EMPLOYEES: Employee[] = [
-  {
-    id: 'qualified',
-    name: 'Alex Chen',
-    initials: 'AC',
-    role: 'Senior Product Designer',
-    department: 'Design',
-    days: 83,
-  },
-  {
-    id: 'near-miss',
-    name: 'Sam Patel',
-    initials: 'SP',
-    role: 'Software Engineer',
-    department: 'Engineering',
-    days: 72,
-  },
-  {
-    id: 'coworking',
-    name: 'Jordan Lee',
-    initials: 'JL',
-    role: 'Data Analyst',
-    department: 'Analytics',
-    days: 67,
-  },
-];
+// The policy applied to each preview employee's logged days
+const EVALUATED = EMPLOYEES.map(employee => ({ ...employee, evaluation: evaluate(employee.statusDays) }));
 
 // Everyone in the org whose evaluation is in, including the preview employees
 const ORG_MEMBERS: OrgMember[] = [
   ...COLLEAGUES,
-  ...EMPLOYEES.map(({ id, name, days }) => ({ id, name, days })),
+  ...EVALUATED.map(({ id, name, evaluation }) => ({ id, name, days: evaluation.counted })),
 ];
 
 export default function App() {
   const [selectedId, setSelectedId] = useState<string>('qualified');
-  const employee = EMPLOYEES.find(e => e.id === selectedId)!;
-  const qualified = employee.days >= THRESHOLD_DAYS;
+  const employee = EVALUATED.find(e => e.id === selectedId)!;
+  const { evaluation } = employee;
+  const { qualified } = evaluation;
   const hero = HERO[qualified ? 'desk' : 'coworking'];
   const illustrationClass = qualified
     ? 'ds-hero-illustration'
@@ -144,7 +115,7 @@ export default function App() {
             <Heading size="3">Desk Status</Heading>
           </Flex>
           <Badge color="blue" variant="soft" radius="full">
-            Q2 '25 Evaluation
+            {EVALUATION.half} Evaluation
           </Badge>
         </div>
       </header>
@@ -163,20 +134,17 @@ export default function App() {
             onValueChange={setSelectedId}
             aria-label="Preview scenario"
           >
-            {EMPLOYEES.map(e => {
-              const isQual = e.days >= THRESHOLD_DAYS;
-              return (
-                <SegmentedControl.Item key={e.id} value={e.id}>
-                  <Flex align="center" gap="2">
-                    <Box
-                      width="7px" height="7px"
-                      style={{ borderRadius: '50%', background: isQual ? '#22C55E' : '#F97316', flexShrink: 0 }}
-                    />
-                    {e.name}
-                  </Flex>
-                </SegmentedControl.Item>
-              );
-            })}
+            {EVALUATED.map(e => (
+              <SegmentedControl.Item key={e.id} value={e.id}>
+                <Flex align="center" gap="2">
+                  <Box
+                    width="7px" height="7px"
+                    style={{ borderRadius: '50%', background: e.evaluation.qualified ? '#22C55E' : '#F97316', flexShrink: 0 }}
+                  />
+                  {e.name}
+                </Flex>
+              </SegmentedControl.Item>
+            ))}
           </SegmentedControl.Root>
         </div>
 
@@ -219,17 +187,19 @@ export default function App() {
               <BottomSheet
                 trigger={<Button size="3">{hero.question}</Button>}
                 title="How desks are assigned"
-                description={`Assigned desks go to teammates with ${THRESHOLD_DAYS} or more in-office days in the evaluation period. Here's where you landed.`}
+                description={`Assigned desks go to teammates with ${THRESHOLD_DAYS} or more qualifying days in the evaluation period. Here's where you landed.`}
               >
                 {/* Custom SVG gauge — see GaugeChart.tsx. Mounts with the sheet, so the fill animates on every open. */}
                 <Box className="card-tile ds-gauge-card">
                   <DeskGauge
-                    currentDays={employee.days}
+                    currentDays={evaluation.counted}
                     totalDays={TOTAL_DAYS}
                     thresholdDays={THRESHOLD_DAYS}
                     qualified={qualified}
                   />
                 </Box>
+
+                <CriteriaBreakdown days={employee.statusDays} evaluation={evaluation} />
 
                 <Box className="card-tile ds-info-card">
                   <Grid className="ds-info-grid">
@@ -237,7 +207,7 @@ export default function App() {
                       <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                         Evaluation period
                       </Text>
-                      <Text size="2" weight="medium">Apr 1 – Jun 30, 2025</Text>
+                      <Text size="2" weight="medium">{EVALUATION.period}</Text>
                     </Box>
                     <Box className="ds-info-cell">
                       <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
@@ -249,15 +219,16 @@ export default function App() {
                       <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                         Min. requirement
                       </Text>
-                      <Text size="2" weight="medium">{THRESHOLD_DAYS} days in office</Text>
+                      <Text size="2" weight="medium">
+                        {THRESHOLD_DAYS} qualifying days{' '}
+                        <Text color="gray" weight="regular">({Math.round((THRESHOLD_DAYS / TOTAL_DAYS) * 100)}%)</Text>
+                      </Text>
                     </Box>
                     <Box className="ds-info-cell">
                       <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                        Days logged
+                        Assigned office
                       </Text>
-                      <Text size="2" weight="medium" color={qualified ? 'green' : 'orange'}>
-                        {employee.days} / {TOTAL_DAYS} days
-                      </Text>
+                      <Text size="2" weight="medium">{employee.office}</Text>
                     </Box>
                   </Grid>
                 </Box>
@@ -271,7 +242,7 @@ export default function App() {
                   </Button>
                 }
                 title="Badge-in leaderboard"
-                description={`Ranked by in-office days among the ${ORG_MEMBERS.length} teammates in your org evaluated so far.`}
+                description={`Ranked by qualifying days among the ${ORG_MEMBERS.length} teammates in your org evaluated so far.`}
               >
                 <Leaderboard members={ORG_MEMBERS} currentId={employee.id} totalDays={TOTAL_DAYS} />
               </BottomSheet>
@@ -280,7 +251,7 @@ export default function App() {
         </Box>
 
         <Text size="1" color="gray" align="center" as="p" className="ds-footnote">
-          Desk assignments are based on Q2 2025 in-office attendance.
+          Desk assignments are based on qualifying days in the {EVALUATION.half} evaluation period.
           Contact your office manager with questions.
         </Text>
       </main>
