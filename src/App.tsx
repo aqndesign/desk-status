@@ -10,12 +10,14 @@ import {
   Grid,
 } from '@radix-ui/themes';
 import { BottomSheet } from './components/BottomSheet';
+import { CampusAssistant } from './components/CampusAssistant';
 import { CriteriaBreakdown } from './components/CriteriaBreakdown';
 import { DeskGauge } from './components/GaugeChart';
 import { Leaderboard } from './components/Leaderboard';
 import { COLLEAGUES, type OrgMember } from './data/colleagues';
 import { EMPLOYEES } from './data/employees';
 import { EVALUATION } from './data/policy';
+import type { Self, Viewer } from './lib/assistant';
 import { evaluate } from './lib/eligibility';
 import { Icon } from './components/ui/Icon';
 
@@ -84,6 +86,9 @@ export default function App() {
   const employee = EVALUATED.find(e => e.id === selectedId)!;
   const { evaluation } = employee;
   const { qualified } = evaluation;
+
+  const self: Self = { id: employee.id, name: employee.name, office: employee.office, statusDays: employee.statusDays, evaluation };
+  const viewer: Viewer = { role: 'employee', self };
   const hero = HERO[qualified ? 'desk' : 'coworking'];
   const illustrationClass = qualified
     ? 'ds-hero-illustration'
@@ -102,27 +107,29 @@ export default function App() {
       <main className={hero.benefits ? 'ds-main ds-main--long' : 'ds-main'}>
         {/* Scenario selector */}
         <div className="ds-scenario-bar">
-          <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Preview scenario
-          </Text>
-          <SegmentedControl.Root
-            size="1"
-            value={selectedId}
-            onValueChange={setSelectedId}
-            aria-label="Preview scenario"
-          >
-            {EVALUATED.map(e => (
-              <SegmentedControl.Item key={e.id} value={e.id}>
-                <Flex align="center" gap="2">
-                  <Box
-                    width="7px" height="7px"
-                    style={{ borderRadius: '50%', background: e.evaluation.qualified ? '#22C55E' : '#F97316', flexShrink: 0 }}
-                  />
-                  {e.name}
-                </Flex>
-              </SegmentedControl.Item>
-            ))}
-          </SegmentedControl.Root>
+          <div className="ds-scenario-group">
+            <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Preview scenario
+            </Text>
+            <SegmentedControl.Root
+              size="1"
+              value={selectedId}
+              onValueChange={setSelectedId}
+              aria-label="Preview scenario"
+            >
+              {EVALUATED.map(e => (
+                <SegmentedControl.Item key={e.id} value={e.id}>
+                  <Flex align="center" gap="2">
+                    <Box
+                      width="7px" height="7px"
+                      style={{ borderRadius: '50%', background: e.evaluation.qualified ? '#22C55E' : '#F97316', flexShrink: 0 }}
+                    />
+                    {e.name}
+                  </Flex>
+                </SegmentedControl.Item>
+              ))}
+            </SegmentedControl.Root>
+          </div>
         </div>
 
         {/* Status card */}
@@ -232,6 +239,9 @@ export default function App() {
           Contact your office manager with questions.
         </Text>
       </main>
+
+      {/* A fresh conversation for each person */}
+      <CampusAssistant key={employee.id} viewer={viewer} />
     </Theme>
   );
 }

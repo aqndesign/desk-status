@@ -774,19 +774,27 @@ button:focus-visible,
 /* ─── Project: Desk Status ───────────────────────────────────────────────── */
 
 /* Main layout */
+/* The bottom padding clears the floating Campus assistant button at the end
+   of the page (48px button + 24px inset + 32px) */
 .ds-main {
   max-width: 580px;
   margin: 0 auto;
-  padding: 28px 20px 48px;
+  padding: 28px 20px 104px;
 }
 
 /* Scenario bar */
 .ds-scenario-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px 20px;
   margin-bottom: 14px;
   flex-wrap: wrap;
+}
+
+.ds-scenario-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Status card — a .card-glass holding tiles, so 16px padding */
@@ -1217,6 +1225,555 @@ button:focus-visible,
   }
 }
 
+/* Pinned under the scrolling body (the assistant's composer) */
+.bottom-sheet-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+/* ─── Campus assistant (components/CampusAssistant.tsx) ──────────────────── */
+
+/* Same treatment as Org Space Manager's assistant button (.btn-assistant):
+   the brand blue → pink gradient, a pink highlight that follows the pointer
+   (--assistant-gradient, set from the component), and a lift on hover.
+   Floating over the page, it also needs a resting shadow. */
+.ca-fab {
+  --ca-glow: color-mix(in srgb, #2657E8 55%, #CF3897);
+  position: fixed;
+  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 20px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--assistant-gradient, linear-gradient(135deg, #2657E8, #CF3897));
+  color: white;
+  font-family: var(--font-source-sans-3), system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 6px 20px -4px color-mix(in srgb, var(--ca-glow) 50%, transparent);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  /* Pops in once the hero has settled */
+  animation: ca-fab-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 700ms both;
+}
+
+@media (hover: hover) {
+  .ca-fab:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      0 10px 24px -4px color-mix(in srgb, var(--ca-glow) 60%, transparent);
+  }
+}
+
+.ca-fab:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* The global ring inherits its radius from the parent, which here is the page */
+.ca-fab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
+
+.ca-fab-icon {
+  font-size: 20px;
+}
+
+@keyframes ca-fab-in {
+  from { opacity: 0; scale: 0.6; translate: 0 12px; }
+  to   { opacity: 1; scale: 1;   translate: 0 0; }
+}
+
+/* While its popover or sheet is open the button is covered by it; hiding it
+   keeps its shadow from peeking out. It shows again as soon as closing
+   starts, so it's already in place when the popover shrinks back onto it. */
+.ca-fab[data-state="open"] {
+  visibility: hidden;
+}
+
+/* ─── Desktop: the button morphs into a popover ───
+
+   The popover is pinned to the button's corner and grows from the button's
+   exact size (--ca-fab-w/h, measured on open) to the panel's, its radius
+   easing from the pill's to the panel's. Above it, a copy of the button's
+   gradient face fades out as it grows, so the first frame is the button
+   itself; the panel's content is laid out at full size from the start and
+   revealed by the growing box, so nothing reflows mid-animation. Closing
+   runs the same morph back down onto the button.
+
+   Easing: ease-in-out is cubic-bezier(0.42, 0, 0.58, 1). The start handle
+   comes 3 points in (0.42 → 0.39) for a slightly steeper start, and the end
+   handle 10 points in (0.58 → 0.48) for a flatter end. */
+:root {
+  --ca-morph: 400ms cubic-bezier(0.39, 0, 0.48, 1);
+}
+
+.ca-popover {
+  --ca-panel-w: min(400px, calc(100vw - 48px));
+  --ca-panel-h: min(680px, calc(100dvh - 48px));
+  --ca-panel-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 0 0.5px rgba(28, 32, 36, 0.1),
+    0 24px 64px -16px rgba(28, 32, 36, 0.32);
+  --ca-fab-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 6px 20px -4px color-mix(in srgb, color-mix(in srgb, #2657E8 55%, #CF3897) 50%, transparent);
+  position: fixed;
+  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 50;
+  width: var(--ca-panel-w);
+  height: var(--ca-panel-h);
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter:         blur(28px) saturate(1.8);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  box-shadow: var(--ca-panel-shadow);
+  animation: ca-morph-open var(--ca-morph) both;
+}
+
+/* A different name from the opening morph: Radix only waits for an exit
+   animation before unmounting if the animation changes */
+.ca-popover[data-state="closed"] {
+  animation: ca-morph-close var(--ca-morph) both;
+}
+
+.ca-popover:focus {
+  outline: none;
+}
+
+@keyframes ca-morph-open {
+  from {
+    width: var(--ca-fab-w);
+    height: var(--ca-fab-h);
+    border-radius: calc(var(--ca-fab-h) / 2);
+    box-shadow: var(--ca-fab-shadow);
+  }
+  to {
+    width: var(--ca-panel-w);
+    height: var(--ca-panel-h);
+    border-radius: 20px;
+    box-shadow: var(--ca-panel-shadow);
+  }
+}
+
+@keyframes ca-morph-close {
+  from {
+    width: var(--ca-panel-w);
+    height: var(--ca-panel-h);
+    border-radius: 20px;
+    box-shadow: var(--ca-panel-shadow);
+  }
+  to {
+    width: var(--ca-fab-w);
+    height: var(--ca-fab-h);
+    border-radius: calc(var(--ca-fab-h) / 2);
+    box-shadow: var(--ca-fab-shadow);
+  }
+}
+
+/* The button's face. Opening: the label goes first, then the gradient
+   dissolves into the panel by mid-morph. Closing: the gradient returns over
+   the second half and the label lands with it. */
+.ca-popover-face {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(135deg, #2657E8, #CF3897);
+  pointer-events: none;
+  animation: ca-fade-out 200ms ease-out both;
+}
+
+.ca-popover-face-label {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: var(--ca-fab-w);
+  height: var(--ca-fab-h);
+  padding: 0 20px 0 16px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  animation: ca-fade-out 100ms ease-out both;
+}
+
+.ca-popover[data-state="closed"] .ca-popover-face {
+  animation: ca-fade-in 200ms ease-in 200ms both;
+}
+
+.ca-popover[data-state="closed"] .ca-popover-face-label {
+  animation: ca-fade-in 100ms ease-in 300ms both;
+}
+
+/* The panel at its full size, pinned to the same corner as the button */
+.ca-popover-panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--ca-panel-w);
+  height: var(--ca-panel-h);
+  padding: 18px 16px 16px;
+  animation: ca-panel-in 240ms ease-out 160ms both;
+}
+
+.ca-popover[data-state="closed"] .ca-popover-panel {
+  animation: ca-panel-out 140ms ease-in both;
+}
+
+.ca-popover-header {
+  flex-shrink: 0;
+  padding: 0 4px 12px;
+}
+
+.ca-popover-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ca-popover-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+}
+
+@keyframes ca-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes ca-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ca-panel-in {
+  from { opacity: 0; translate: 0 8px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes ca-panel-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Phones only: see the "Mobile" block */
+.ca-dock-scrim {
+  display: none;
+}
+
+/* A fixed height, so the sheet doesn't grow with every message; the thread
+   scrolls inside it */
+.bottom-sheet--assistant {
+  height: min(88dvh, 760px);
+}
+
+.bottom-sheet--assistant .bottom-sheet-body {
+  flex: 1;
+}
+
+/* The glyph takes the brand gradient, like the assistant glyph in Org Space Manager */
+.ca-glyph,
+.ca-gradient-text {
+  background: linear-gradient(135deg, #2657E8, #CF3897);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.ca-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 4px 4px;
+}
+
+/* Greeting: rises in, then its gradient sweeps across, then the subtitle follows */
+.ca-intro {
+  padding: 16px 12px 8px;
+}
+
+.ca-intro-title {
+  font-family: var(--font-heading), system-ui, sans-serif;
+  animation: ca-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ca-gradient-text {
+  background-image: linear-gradient(90deg, #2657E8, #CF3897, #2657E8, #CF3897);
+  background-size: 300% 100%;
+  animation: ca-gradient-sweep 350ms ease-in-out 500ms both;
+}
+
+.ca-intro-subtitle,
+.ca-intro-scope {
+  max-width: 400px;
+  animation: ca-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) 600ms both;
+}
+
+.ca-intro-scope {
+  text-align: center;
+}
+
+/* Sits in the line of text, so it stays with the first word when the note wraps */
+.ca-intro-scope .uic {
+  margin-right: 4px;
+  vertical-align: -1px;
+  color: var(--gray-9);
+}
+
+@keyframes ca-rise {
+  from { opacity: 0; translate: 0 14px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes ca-gradient-sweep {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
+}
+
+.ca-message {
+  display: flex;
+  animation: ca-bubble-in 240ms ease-out both;
+}
+
+.ca-message--you {
+  justify-content: flex-end;
+}
+
+.ca-bubble {
+  max-width: 88%;
+  padding: 8px 12px;
+  border: 0.5px solid var(--gray-4);
+  border-radius: 16px 16px 16px 4px;
+  background: var(--gray-2);
+  color: var(--gray-12);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ca-message--you .ca-bubble {
+  border: 0;
+  border-radius: 16px 16px 4px 16px;
+  background: var(--color-accent);
+  color: white;
+  white-space: pre-line;
+}
+
+.ca-bubble p,
+.ca-bubble ul {
+  margin: 0;
+}
+
+/* :not() lifts this above the margin reset on p and ul */
+.ca-bubble > :not(:first-child) {
+  margin-top: 8px;
+}
+
+.ca-bubble ul {
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.ca-bubble li::marker {
+  color: var(--gray-9);
+}
+
+.ca-bubble li + li {
+  margin-top: 4px;
+}
+
+.ca-restricted {
+  gap: 4px;
+}
+
+.ca-thinking {
+  display: flex;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.ca-thinking span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gray-8);
+  animation: ca-think 1.2s ease-in-out infinite;
+}
+
+.ca-thinking span:nth-child(2) { animation-delay: 150ms; }
+.ca-thinking span:nth-child(3) { animation-delay: 300ms; }
+
+@keyframes ca-bubble-in {
+  from { opacity: 0; translate: 0 8px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes ca-think {
+  0%, 60%, 100% { translate: 0 0;    opacity: 0.45; }
+  30%           { translate: 0 -4px; opacity: 1; }
+}
+
+/* Suggested questions: one row that scrolls sideways, bleeding to the
+   sheet's edges so pills slide out from under them rather than being cut */
+.ca-prompts {
+  display: flex;
+  gap: 8px;
+  margin: 0 -16px;
+  padding: 2px 16px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.ca-prompts::-webkit-scrollbar {
+  display: none;
+}
+
+.ca-prompt {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gray-3);
+  color: var(--accent-11);
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: background-color 150ms ease;
+}
+
+.ca-prompt:hover:not(:disabled) {
+  background: var(--gray-4);
+}
+
+.ca-prompt:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.ca-prompt:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ca-prompt:focus-visible {
+  border-radius: 999px;
+}
+
+/* Composer: Org Space Manager's brand-gradient glow behind a borderless
+   surface. Focus brightens the glow rather than drawing a ring inside it. */
+.ca-composer {
+  position: relative;
+}
+
+.ca-composer::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #2657E8, #CF3897);
+  filter: blur(12px);
+  opacity: 0.25;
+  transition: opacity 200ms ease-in-out;
+}
+
+.ca-composer:focus-within::before {
+  opacity: 0.5;
+}
+
+.ca-composer-surface {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 6px 6px 16px;
+  border-radius: 22px;
+  background: white;
+}
+
+/* Grows with its text up to five lines, where supported */
+.ca-input {
+  flex: 1;
+  min-height: 32px;
+  max-height: 112px;
+  padding: 6px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--gray-12);
+  font: inherit;
+  font-size: 15px;
+  line-height: 20px;
+  field-sizing: content;
+}
+
+.ca-input::placeholder {
+  color: var(--gray-9);
+}
+
+.ca-send:not(:disabled) {
+  background-image: linear-gradient(135deg, #2657E8, #CF3897);
+}
+
+.ca-send:focus-visible {
+  border-radius: 999px;
+}
+
+/* The global reduced-motion rule zeroes durations but not delays; show
+   everything at once rather than popping in late */
+@media (prefers-reduced-motion: reduce) {
+  /* The popover simply appears and disappears at its full size */
+  .ca-popover,
+  .ca-popover[data-state="closed"],
+  .ca-popover-panel,
+  .ca-popover[data-state="closed"] .ca-popover-panel {
+    animation: none;
+  }
+
+  .ca-popover-face {
+    display: none;
+  }
+
+  .ca-fab,
+  .ca-intro-title,
+  .ca-gradient-text,
+  .ca-intro-subtitle,
+  .ca-intro-scope,
+  .ca-message {
+    animation: none;
+  }
+
+  .ca-thinking span {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
 /* ─── Criteria breakdown (components/CriteriaBreakdown.tsx) ──────────────── */
 
 /* --seg is the colour of whichever group or bar segment the element belongs to */
@@ -1616,7 +2173,7 @@ button:focus-visible,
 
 /* ─── Mobile ─────────────────────────────────────────────────────────────── */
 
-/* Phones: below Radix Themes' `xs` breakpoint (520px).
+/* Phones: below Radix Themes' `xs` breakpoint (MOBILE_QUERY in lib/breakpoints.ts).
 
    The first screen is budgeted as one unit so the card's buttons stay above
    the fold: the page is exactly one visible screen tall, the chrome and type
@@ -1637,7 +2194,11 @@ button:focus-visible,
     margin-bottom: 10px;
   }
 
-  .ds-scenario-bar > .rt-Text {
+  .ds-scenario-group {
+    width: 100%;
+  }
+
+  .ds-scenario-group > .rt-Text {
     display: none;
   }
 
@@ -1754,13 +2315,75 @@ button:focus-visible,
     padding-bottom: 8px;
   }
 
+  /* Campus assistant: the floating button becomes a 52px circle in the
+     bottom-right corner, within thumb reach. The page keeps a dock that
+     tall clear at its foot, so the button never sits on the card's
+     actions: the first-screen budget ends above it, and when the content is
+     taller than the screen the sticky actions pin above the dock instead of
+     at the bottom edge. A scrim fades whatever scrolls through the dock. */
+  :root {
+    --ca-dock: calc(52px + 16px + 12px + env(safe-area-inset-bottom));
+  }
+
+  .ds-main,
+  .ds-main--long {
+    padding-bottom: var(--ca-dock);
+  }
+
+  .ds-hero-actions {
+    bottom: var(--ca-dock);
+  }
+
+  .ca-fab {
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  /* The button keeps its accessible name through aria-label */
+  .ca-fab-label {
+    display: none;
+  }
+
+  .ca-fab-icon {
+    font-size: 22px;
+  }
+
+  .ca-dock-scrim {
+    display: block;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 39;
+    height: var(--ca-dock);
+    background: linear-gradient(to top, rgba(238, 242, 247, 0.96) 45%, rgba(238, 242, 247, 0));
+    pointer-events: none;
+  }
+
+  /* Bigger targets for thumbs, and 16px text so iOS doesn't zoom in on focus */
+  .ca-prompt {
+    min-height: 36px;
+    font-size: 14px;
+  }
+
+  .ca-input {
+    font-size: 16px;
+  }
+
+  /* The card ends at the top of the Campus assistant's dock (below), so the
+     fine print hangs from there, and its padding lets it scroll up clear of
+     the button */
   .ds-main--long .ds-footnote {
     position: absolute;
-    top: 100%;
+    top: calc(100% - var(--ca-dock));
     right: 12px;
     left: 12px;
     margin-top: 4px;
-    padding-bottom: 16px;
+    padding-bottom: var(--ca-dock);
   }
 
   .ds-info-grid {
