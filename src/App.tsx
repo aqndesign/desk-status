@@ -6,12 +6,12 @@ import {
   Text,
   Heading,
   Button,
-  SegmentedControl,
   Grid,
 } from '@radix-ui/themes';
 import { BottomSheet } from './components/BottomSheet';
 import { CampusAssistant } from './components/CampusAssistant';
 import { CriteriaBreakdown } from './components/CriteriaBreakdown';
+import { DebugScenarioSwitcher, type Scenario } from './components/DebugScenarioSwitcher';
 import { DeskGauge } from './components/GaugeChart';
 import { Leaderboard } from './components/Leaderboard';
 import { COLLEAGUES, type OrgMember } from './data/colleagues';
@@ -75,6 +75,11 @@ const HERO: Record<Placement, HeroMessage> = {
 // The policy applied to each preview employee's logged days
 const EVALUATED = EMPLOYEES.map(employee => ({ ...employee, evaluation: evaluate(employee.statusDays) }));
 
+// The use cases the debug switcher offers
+const SCENARIOS: Scenario[] = EVALUATED.map(({ id, name, role, evaluation }) => ({
+  id, name, role, counted: evaluation.counted, qualified: evaluation.qualified,
+}));
+
 // Everyone in the org whose evaluation is in, including the preview employees
 const ORG_MEMBERS: OrgMember[] = [
   ...COLLEAGUES,
@@ -105,33 +110,6 @@ export default function App() {
       {/* Main */}
       {/* A message with a benefits list is long enough to need the whole first screen on phones */}
       <main className={hero.benefits ? 'ds-main ds-main--long' : 'ds-main'}>
-        {/* Scenario selector */}
-        <div className="ds-scenario-bar">
-          <div className="ds-scenario-group">
-            <Text size="1" color="gray" weight="medium" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Preview scenario
-            </Text>
-            <SegmentedControl.Root
-              size="1"
-              value={selectedId}
-              onValueChange={setSelectedId}
-              aria-label="Preview scenario"
-            >
-              {EVALUATED.map(e => (
-                <SegmentedControl.Item key={e.id} value={e.id}>
-                  <Flex align="center" gap="2">
-                    <Box
-                      width="7px" height="7px"
-                      style={{ borderRadius: '50%', background: e.evaluation.qualified ? '#22C55E' : '#F97316', flexShrink: 0 }}
-                    />
-                    {e.name}
-                  </Flex>
-                </SegmentedControl.Item>
-              ))}
-            </SegmentedControl.Root>
-          </div>
-        </div>
-
         {/* Status card */}
         <Box className="card-glass ds-status-card">
           <Flex direction="column" gap="2" className="card-tile ds-hero-card">
@@ -242,6 +220,9 @@ export default function App() {
 
       {/* A fresh conversation for each person */}
       <CampusAssistant key={employee.id} viewer={viewer} />
+
+      {/* Debug only: switches between the preview use cases */}
+      <DebugScenarioSwitcher scenarios={SCENARIOS} value={selectedId} onValueChange={setSelectedId} />
     </Theme>
   );
 }

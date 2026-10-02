@@ -782,21 +782,6 @@ button:focus-visible,
   padding: 28px 20px 104px;
 }
 
-/* Scenario bar */
-.ds-scenario-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px 20px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-
-.ds-scenario-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
 /* Status card — a .card-glass holding tiles, so 16px padding */
 .ds-status-card {
   padding: 16px;
@@ -1774,6 +1759,143 @@ button:focus-visible,
   }
 }
 
+/* ─── Debug switcher (components/DebugScenarioSwitcher.tsx) ──────────────── */
+
+/* Deliberately unlike the product's controls (small, dark, bottom left), so
+   it reads as a tool rather than part of the page */
+.dbg-fab {
+  position: fixed;
+  left: 24px;
+  bottom: calc(28px + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  font-size: 18px;
+  box-shadow: 0 4px 14px rgba(28, 32, 36, 0.24);
+  opacity: 0.85;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.dbg-fab:hover,
+.dbg-fab[data-state="open"] {
+  opacity: 1;
+}
+
+.dbg-fab:active {
+  transform: scale(0.94);
+}
+
+/* The global ring inherits its radius from the parent, which here is the page */
+.dbg-fab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 50%;
+}
+
+.dbg-popover {
+  width: 280px;
+  padding: 6px;
+  border-radius: 14px;
+  background: white;
+  box-shadow:
+    0 0 0 0.5px rgba(28, 32, 36, 0.12),
+    0 12px 32px -8px rgba(28, 32, 36, 0.28);
+  transform-origin: var(--radix-popover-content-transform-origin);
+  animation: dbg-pop-in 160ms ease-out;
+}
+
+/* A different name from the entry: Radix only waits for an exit animation if it changes */
+.dbg-popover[data-state="closed"] {
+  animation: dbg-pop-out 120ms ease-in forwards;
+}
+
+.dbg-popover:focus {
+  outline: none;
+}
+
+.dbg-head {
+  padding: 8px 10px 6px;
+}
+
+.dbg-title {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dbg-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dbg-option {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  transition: background-color 120ms ease;
+}
+
+.dbg-option:hover {
+  background: var(--gray-3);
+}
+
+.dbg-option[data-state="checked"] {
+  background: color-mix(in srgb, var(--color-accent) 8%, white);
+}
+
+.dbg-option:focus-visible {
+  border-radius: 10px;
+  outline-offset: -2px;
+}
+
+.dbg-option-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Same green/orange as the gauge: has a desk / in coworking */
+.dbg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F97316;
+}
+
+.dbg-dot[data-qualified] {
+  background: #22C55E;
+}
+
+.dbg-check {
+  color: var(--color-accent);
+}
+
+@keyframes dbg-pop-in {
+  from { opacity: 0; scale: 0.96; }
+  to   { opacity: 1; scale: 1; }
+}
+
+@keyframes dbg-pop-out {
+  from { opacity: 1; scale: 1; }
+  to   { opacity: 0; scale: 0.96; }
+}
+
 /* ─── Criteria breakdown (components/CriteriaBreakdown.tsx) ──────────────── */
 
 /* --seg is the colour of whichever group or bar segment the element belongs to */
@@ -2189,21 +2311,11 @@ button:focus-visible,
     padding: 12px 12px 16px;
   }
 
-  /* The scenario switcher is labelled for assistive tech via aria-label */
-  .ds-scenario-bar {
-    margin-bottom: 10px;
-  }
-
-  .ds-scenario-group {
-    width: 100%;
-  }
-
-  .ds-scenario-group > .rt-Text {
-    display: none;
-  }
-
-  .ds-scenario-bar .rt-SegmentedControlRoot {
-    width: 100%;
+  /* Debug switcher: lined up with the assistant button's centre, in the
+     otherwise empty left end of its dock */
+  .dbg-fab {
+    left: 16px;
+    bottom: calc(22px + env(safe-area-inset-bottom));
   }
 
   /* Card and tile stretch to the bottom of the first screen. A thinner glass
