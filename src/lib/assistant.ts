@@ -5,7 +5,7 @@ import { canAccess, type Topic } from './access';
 import type { Evaluation } from './eligibility';
 
 /**
- * The Campus assistant's answers, worked out from the policy and the viewer's
+ * Campus Buddy's answers, worked out from the policy and the viewer's
  * own days. It's rule-based: each question is sorted into a topic, checked
  * against lib/access.ts, then answered with the viewer's numbers.
  */

@@ -774,7 +774,7 @@ button:focus-visible,
 /* ─── Project: Desk Status ───────────────────────────────────────────────── */
 
 /* Main layout */
-/* The bottom padding clears the floating Campus assistant button at the end
+/* The bottom padding clears the floating Campus Buddy button at the end
    of the page (48px button + 24px inset + 32px) */
 .ds-main {
   max-width: 580px;
@@ -1210,7 +1210,7 @@ button:focus-visible,
   }
 }
 
-/* Pinned under the scrolling body (the assistant's composer) */
+/* Pinned under the scrolling body (Campus Buddy's composer) */
 .bottom-sheet-footer {
   flex-shrink: 0;
   display: flex;
@@ -1219,14 +1219,14 @@ button:focus-visible,
   padding-top: 10px;
 }
 
-/* ─── Campus assistant (components/CampusAssistant.tsx) ──────────────────── */
+/* ─── Campus Buddy (components/CampusBuddy.tsx) ──────────────────────────── */
 
-/* Same treatment as Org Space Manager's assistant button (.btn-assistant):
+/* Same treatment as Org Space Manager's Campus Buddy button (.btn-assistant):
    the brand blue → pink gradient, a pink highlight that follows the pointer
    (--assistant-gradient, set from the component), and a lift on hover.
    Floating over the page, it also needs a resting shadow. */
-.ca-fab {
-  --ca-glow: color-mix(in srgb, #2657E8 55%, #CF3897);
+.cb-fab {
+  --cb-glow: color-mix(in srgb, #2657E8 55%, #CF3897);
   position: fixed;
   right: 24px;
   bottom: calc(24px + env(safe-area-inset-bottom));
@@ -1247,38 +1247,38 @@ button:focus-visible,
   white-space: nowrap;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    0 6px 20px -4px color-mix(in srgb, var(--ca-glow) 50%, transparent);
+    0 6px 20px -4px color-mix(in srgb, var(--cb-glow) 50%, transparent);
   transition: transform 200ms ease, box-shadow 200ms ease;
   /* Pops in once the hero has settled */
-  animation: ca-fab-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 700ms both;
+  animation: cb-fab-in 450ms cubic-bezier(0.34, 1.56, 0.64, 1) 700ms both;
 }
 
 @media (hover: hover) {
-  .ca-fab:hover {
+  .cb-fab:hover {
     transform: translateY(-2px);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      0 10px 24px -4px color-mix(in srgb, var(--ca-glow) 60%, transparent);
+      0 10px 24px -4px color-mix(in srgb, var(--cb-glow) 60%, transparent);
   }
 }
 
-.ca-fab:active {
+.cb-fab:active {
   transform: scale(0.96);
   transition-duration: 80ms;
 }
 
 /* The global ring inherits its radius from the parent, which here is the page */
-.ca-fab:focus-visible {
+.cb-fab:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
   border-radius: 999px;
 }
 
-.ca-fab-icon {
+.cb-fab-icon {
   font-size: 20px;
 }
 
-@keyframes ca-fab-in {
+@keyframes cb-fab-in {
   from { opacity: 0; scale: 0.6; translate: 0 12px; }
   to   { opacity: 1; scale: 1;   translate: 0 0; }
 }
@@ -1286,159 +1286,222 @@ button:focus-visible,
 /* While its popover or sheet is open the button is covered by it; hiding it
    keeps its shadow from peeking out. It shows again as soon as closing
    starts, so it's already in place when the popover shrinks back onto it. */
-.ca-fab[data-state="open"] {
+.cb-fab[data-state="open"] {
   visibility: hidden;
+}
+
+/* --cb-morph: the button ↔ popover morph. Ease-in-out is
+   cubic-bezier(0.42, 0, 0.58, 1); the start handle comes 3 points in
+   (0.42 → 0.39) for a slightly steeper start, and the end handle 10 points
+   in (0.58 → 0.48) for a flatter end.
+   --cb-ease: Org Space Manager's voice intro (INTRO_EASE in
+   lib/voice/intro.ts), for everything that enters once the morph is under way.
+   --cb-leave: closing, how long the content takes to leave before the
+   morph runs back. */
+:root {
+  --cb-morph: 400ms cubic-bezier(0.39, 0, 0.48, 1);
+  --cb-ease: cubic-bezier(0.378, 0, 0.517, 1);
+  --cb-leave: 120ms;
 }
 
 /* ─── Desktop: the button morphs into a popover ───
 
-   The popover is pinned to the button's corner and grows from the button's
-   exact size (--ca-fab-w/h, measured on open) to the panel's, its radius
-   easing from the pill's to the panel's. Above it, a copy of the button's
-   gradient face fades out as it grows, so the first frame is the button
-   itself; the panel's content is laid out at full size from the start and
-   revealed by the growing box, so nothing reflows mid-animation. Closing
-   runs the same morph back down onto the button.
+   Opening, in three steps:
+   1. 0–400ms: the box grows from the button's exact size and corner
+      (--cb-fab-w/h, measured on open) into the panel, its radius and shadow
+      going with it, while the button's gradient dissolves into the panel.
+      The button's icon and label don't fade: they ride the box's top-left
+      corner up into the header, the label inking from white to near-black
+      and the icon's white giving way to the brand gradient, which flows in
+      from the right.
+   2. 400–750ms: the sublabel rises 16px into place under the title, and the
+      close button fades in.
+   3. From 375ms, halfway through those 750ms: the body ("Entrance", below).
 
-   Easing: ease-in-out is cubic-bezier(0.42, 0, 0.58, 1). The start handle
-   comes 3 points in (0.42 → 0.39) for a slightly steeper start, and the end
-   handle 10 points in (0.58 → 0.48) for a flatter end. */
-:root {
-  --ca-morph: 400ms cubic-bezier(0.39, 0, 0.48, 1);
-}
-
-.ca-popover {
-  --ca-panel-w: min(400px, calc(100vw - 48px));
-  --ca-panel-h: min(680px, calc(100dvh - 48px));
-  --ca-panel-shadow:
+   Closing runs it back: the sublabel, close button, body and footer leave
+   first (--cb-leave), then the box shrinks back onto the button as the
+   label turns white again and the icon's white flows back over the
+   gradient from the left. */
+.cb-popover {
+  --cb-panel-w: min(400px, calc(100vw - 48px));
+  --cb-panel-h: min(680px, calc(100dvh - 48px));
+  --cb-panel-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.92),
     0 0 0 0.5px rgba(28, 32, 36, 0.1),
     0 24px 64px -16px rgba(28, 32, 36, 0.32);
-  --ca-fab-shadow:
+  --cb-fab-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
     0 6px 20px -4px color-mix(in srgb, color-mix(in srgb, #2657E8 55%, #CF3897) 50%, transparent);
+  --cb-intro-at: 375ms;
   position: fixed;
   right: 24px;
   bottom: calc(24px + env(safe-area-inset-bottom));
   z-index: 50;
-  width: var(--ca-panel-w);
-  height: var(--ca-panel-h);
-  overflow: hidden;
+  width: var(--cb-panel-w);
+  height: var(--cb-panel-h);
+  /* clip rather than hidden: a clipped box isn't a scroll container, so
+     focusing or scrolling to something inside can't shift the layout while
+     the box is still small */
+  overflow: clip;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter:         blur(28px) saturate(1.8);
   -webkit-backdrop-filter: blur(28px) saturate(1.8);
-  box-shadow: var(--ca-panel-shadow);
-  animation: ca-morph-open var(--ca-morph) both;
+  box-shadow: var(--cb-panel-shadow);
+  animation: cb-morph-open var(--cb-morph) both;
 }
 
-/* A different name from the opening morph: Radix only waits for an exit
-   animation before unmounting if the animation changes */
-.ca-popover[data-state="closed"] {
-  animation: ca-morph-close var(--ca-morph) both;
+/* Every closing animation in the popover has a different name from its
+   opening one: Radix only waits for an exit animation before unmounting
+   if the animation changes */
+.cb-popover[data-state="closed"] {
+  animation: cb-morph-close var(--cb-morph) var(--cb-leave) both;
 }
 
-.ca-popover:focus {
+.cb-popover:focus {
   outline: none;
 }
 
-@keyframes ca-morph-open {
+/* --cb-fab-lift starts the box where the hover lift had raised the button */
+@keyframes cb-morph-open {
   from {
-    width: var(--ca-fab-w);
-    height: var(--ca-fab-h);
-    border-radius: calc(var(--ca-fab-h) / 2);
-    box-shadow: var(--ca-fab-shadow);
+    width: var(--cb-fab-w);
+    height: var(--cb-fab-h);
+    border-radius: calc(var(--cb-fab-h) / 2);
+    box-shadow: var(--cb-fab-shadow);
+    translate: 0 calc(var(--cb-fab-lift) * -1);
   }
   to {
-    width: var(--ca-panel-w);
-    height: var(--ca-panel-h);
+    width: var(--cb-panel-w);
+    height: var(--cb-panel-h);
     border-radius: 20px;
-    box-shadow: var(--ca-panel-shadow);
+    box-shadow: var(--cb-panel-shadow);
+    translate: 0 0;
   }
 }
 
-@keyframes ca-morph-close {
+@keyframes cb-morph-close {
   from {
-    width: var(--ca-panel-w);
-    height: var(--ca-panel-h);
+    width: var(--cb-panel-w);
+    height: var(--cb-panel-h);
     border-radius: 20px;
-    box-shadow: var(--ca-panel-shadow);
+    box-shadow: var(--cb-panel-shadow);
   }
   to {
-    width: var(--ca-fab-w);
-    height: var(--ca-fab-h);
-    border-radius: calc(var(--ca-fab-h) / 2);
-    box-shadow: var(--ca-fab-shadow);
+    width: var(--cb-fab-w);
+    height: var(--cb-fab-h);
+    border-radius: calc(var(--cb-fab-h) / 2);
+    box-shadow: var(--cb-fab-shadow);
   }
 }
 
-/* The button's face. Opening: the label goes first, then the gradient
-   dissolves into the panel by mid-morph. Closing: the gradient returns over
-   the second half and the label lands with it. */
-.ca-popover-face {
+/* The button's gradient, pointer highlight and all (--cb-face) */
+.cb-popover-face {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  background: linear-gradient(135deg, #2657E8, #CF3897);
+  background: var(--cb-face, linear-gradient(135deg, #2657E8, #CF3897));
+  opacity: 0;
   pointer-events: none;
-  animation: ca-fade-out 200ms ease-out both;
+  animation: cb-fade-out var(--cb-morph) both;
 }
 
-.ca-popover-face-label {
+.cb-popover[data-state="closed"] .cb-popover-face {
+  animation: cb-fade-in var(--cb-morph) var(--cb-leave) both;
+}
+
+.cb-popover-layout {
   position: absolute;
-  right: 0;
-  bottom: 0;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--cb-panel-w);
+  height: var(--cb-panel-h);
+  padding: 18px 16px 16px;
+}
+
+/* Right padding keeps the sublabel clear of the close button */
+.cb-popover-header {
+  position: relative;
+  flex-shrink: 0;
+  padding: 0 44px 12px 4px;
+}
+
+/* Typeset like the button's label, so it reads as the same words throughout.
+   At rest it sits 4px further in and down than they do in the button
+   (20, 18 against 16, 14), so it starts offset by that much. */
+.cb-popover-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: var(--ca-fab-w);
-  height: var(--ca-fab-h);
-  padding: 0 20px 0 16px;
-  color: white;
+  height: 20px;
+  margin: 0;
+  color: var(--color-primary);
+  font-family: var(--font-source-sans-3), system-ui, sans-serif;
   font-size: 15px;
   font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
-  animation: ca-fade-out 100ms ease-out both;
+  animation: cb-title-in var(--cb-morph) both;
 }
 
-.ca-popover[data-state="closed"] .ca-popover-face {
-  animation: ca-fade-in 200ms ease-in 200ms both;
+.cb-popover[data-state="closed"] .cb-popover-title {
+  animation: cb-title-out var(--cb-morph) var(--cb-leave) both;
 }
 
-.ca-popover[data-state="closed"] .ca-popover-face-label {
-  animation: ca-fade-in 100ms ease-in 300ms both;
+/* Two layers clipped to the glyph: the brand gradient, under a white veil
+   three times the glyph's width that clears from white to transparent across
+   its middle third. Sliding the veil left brings its clear end over the
+   glyph, so the gradient flows in from the right; at rest only the clear end
+   is in view, leaving the same 135° gradient as everywhere else. */
+.cb-popover-title-icon {
+  font-size: 20px;
+  background-image:
+    linear-gradient(90deg, #fff 33.33%, rgb(255 255 255 / 0) 66.67%),
+    linear-gradient(135deg, #2657E8, #CF3897);
+  background-size: 300% 100%, 100% 100%;
+  background-position: 100% 0, 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: cb-icon-fill var(--cb-morph) both;
 }
 
-/* The panel at its full size, pinned to the same corner as the button */
-.ca-popover-panel {
+.cb-popover[data-state="closed"] .cb-popover-title-icon {
+  animation: cb-icon-unfill var(--cb-morph) var(--cb-leave) both;
+}
+
+.cb-popover-title-label {
+  animation: cb-label-ink var(--cb-morph) both;
+}
+
+.cb-popover[data-state="closed"] .cb-popover-title-label {
+  animation: cb-label-unink var(--cb-morph) var(--cb-leave) both;
+}
+
+/* Step 2 */
+.cb-popover-sublabel {
+  margin: 4px 0 0;
+  animation: cb-rise 350ms var(--cb-ease) 400ms backwards;
+}
+
+.cb-popover-close {
   position: absolute;
+  top: -6px;
   right: 0;
-  bottom: 0;
-  display: flex;
-  flex-direction: column;
-  width: var(--ca-panel-w);
-  height: var(--ca-panel-h);
-  padding: 18px 16px 16px;
-  animation: ca-panel-in 240ms ease-out 160ms both;
+  animation: cb-fade-in 200ms ease-out 400ms backwards;
 }
 
-.ca-popover[data-state="closed"] .ca-popover-panel {
-  animation: ca-panel-out 140ms ease-in both;
-}
-
-.ca-popover-header {
-  flex-shrink: 0;
-  padding: 0 4px 12px;
-}
-
-.ca-popover-body {
+.cb-popover-body {
+  /* The messages' offset parent, for scrolling to them */
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-.ca-popover-footer {
+.cb-popover-footer {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1446,110 +1509,237 @@ button:focus-visible,
   padding-top: 10px;
 }
 
-@keyframes ca-fade-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+/* Closing, first beat */
+.cb-popover[data-state="closed"] :is(.cb-popover-sublabel, .cb-popover-close, .cb-popover-body, .cb-popover-footer) {
+  animation: cb-fade-out var(--cb-leave) ease-in both;
 }
 
-@keyframes ca-fade-in {
+@keyframes cb-title-in {
+  from { translate: -4px -4px; }
+  to   { translate: 0 0; }
+}
+
+@keyframes cb-title-out {
+  from { translate: 0 0; }
+  to   { translate: -4px -4px; }
+}
+
+@keyframes cb-icon-fill {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 100% 0, 0 0; }
+}
+
+@keyframes cb-icon-unfill {
+  from { background-position: 100% 0, 0 0; }
+  to   { background-position: 0 0, 0 0; }
+}
+
+@keyframes cb-label-ink {
+  from { color: white; }
+  to   { color: var(--color-primary); }
+}
+
+@keyframes cb-label-unink {
+  from { color: var(--color-primary); }
+  to   { color: white; }
+}
+
+/* Phones: the bottom sheet. A fixed height, so the sheet doesn't grow with
+   every message; the thread scrolls inside it. */
+.bottom-sheet--buddy {
+  /* The entrance starts once the sheet has slid up */
+  --cb-intro-at: 350ms;
+  height: min(88dvh, 760px);
+}
+
+.bottom-sheet--buddy .bottom-sheet-body {
+  /* The messages' offset parent, for scrolling to them */
+  position: relative;
+  flex: 1;
+}
+
+/* Phones only: see the "Mobile" block */
+.cb-dock-scrim {
+  display: none;
+}
+
+/* ─── Entrance: Org Space Manager's voice intro (lib/voice/intro.ts) ───
+
+   In its compact form, in place at the mascot's resting size, starting at
+   --cb-intro-at (set by the popover and the sheet above):
+   - the mascot turns in from -15° at 85%, swinging past upright and
+     wobbling to rest (4°, -2°, 1°, 120ms a swing) as it fades in;
+   - halfway through the turn (175ms) the greeting slides down 10px into
+     place as it fades in, and 250ms later its gradient sweeps across;
+   - as the turn ends (350ms) the suggestions rise 16px as they fade in,
+     50ms apart, and the composer follows the last of them by 150ms.
+   A conversation in progress skips the mascot: the thread rises back in,
+   then the suggestions and the composer. */
+.cb-surface {
+  --cb-step3: calc(var(--cb-intro-at) + 350ms);
+}
+
+.cb-resumed {
+  --cb-step3: calc(var(--cb-intro-at) + 100ms);
+}
+
+.cb-fresh .cb-mascot {
+  animation:
+    cb-turn 710ms linear var(--cb-intro-at) backwards,
+    cb-fade-in 210ms ease-out var(--cb-intro-at) backwards;
+}
+
+.cb-fresh .cb-greeting {
+  animation: cb-drop 350ms var(--cb-ease) calc(var(--cb-intro-at) + 175ms) backwards;
+}
+
+.cb-fresh .cb-gradient-text {
+  animation: cb-sweep 600ms ease-in-out calc(var(--cb-intro-at) + 425ms) backwards;
+}
+
+.cb-resumed .cb-thread {
+  animation: cb-rise 350ms var(--cb-ease) var(--cb-intro-at) backwards;
+}
+
+/* --i is the suggestion's place in the row; --cb-prompts how many there are */
+.cb-surface .cb-prompt {
+  animation: cb-rise 350ms var(--cb-ease) calc(var(--cb-step3) + var(--i, 0) * 50ms) backwards;
+}
+
+.cb-surface .cb-composer {
+  animation: cb-rise 350ms var(--cb-ease) calc(var(--cb-step3) + (var(--cb-prompts, 1) - 1) * 50ms + 150ms) backwards;
+}
+
+/* The turn and each swing ease out and back in, like a pendulum at the ends
+   of its arc. Swings at 350, 470, 590 and 710ms of 710. */
+@keyframes cb-turn {
+  0%      { transform: rotate(-15deg) scale(0.85); animation-timing-function: cubic-bezier(0.378, 0, 0.517, 1); }
+  49.296% { transform: rotate(4deg) scale(1);      animation-timing-function: cubic-bezier(0.378, 0, 0.517, 1); }
+  66.197% { transform: rotate(-2deg) scale(1);     animation-timing-function: cubic-bezier(0.378, 0, 0.517, 1); }
+  83.099% { transform: rotate(1deg) scale(1);      animation-timing-function: cubic-bezier(0.378, 0, 0.517, 1); }
+  100%    { transform: rotate(0deg) scale(1); }
+}
+
+@keyframes cb-drop {
+  from { opacity: 0; translate: 0 -10px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes cb-sweep {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
+}
+
+@keyframes cb-rise {
+  from { opacity: 0; translate: 0 16px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+@keyframes cb-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 
-@keyframes ca-panel-in {
-  from { opacity: 0; translate: 0 8px; }
-  to   { opacity: 1; translate: 0 0; }
-}
-
-@keyframes ca-panel-out {
+@keyframes cb-fade-out {
   from { opacity: 1; }
   to   { opacity: 0; }
 }
 
-/* Phones only: see the "Mobile" block */
-.ca-dock-scrim {
-  display: none;
-}
+/* ─── Thread ─── */
 
-/* A fixed height, so the sheet doesn't grow with every message; the thread
-   scrolls inside it */
-.bottom-sheet--assistant {
-  height: min(88dvh, 760px);
-}
-
-.bottom-sheet--assistant .bottom-sheet-body {
-  flex: 1;
-}
-
-/* The glyph takes the brand gradient, like the assistant glyph in Org Space Manager */
-.ca-glyph,
-.ca-gradient-text {
+/* The glyph takes the brand gradient, like Campus Buddy's glyph in Org Space Manager */
+.cb-glyph {
   background: linear-gradient(135deg, #2657E8, #CF3897);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.ca-thread {
+.cb-thread {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 0 4px 4px;
 }
 
-/* Greeting: rises in, then its gradient sweeps across, then the subtitle follows */
-.ca-intro {
-  padding: 16px 12px 8px;
-}
-
-.ca-intro-title {
-  font-family: var(--font-heading), system-ui, sans-serif;
-  animation: ca-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.ca-gradient-text {
-  background-image: linear-gradient(90deg, #2657E8, #CF3897, #2657E8, #CF3897);
-  background-size: 300% 100%;
-  animation: ca-gradient-sweep 350ms ease-in-out 500ms both;
-}
-
-.ca-intro-subtitle,
-.ca-intro-scope {
-  max-width: 400px;
-  animation: ca-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) 600ms both;
-}
-
-.ca-intro-scope {
+/* The voice home's hello: the mascot over the greeting */
+.cb-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 12px 8px;
   text-align: center;
 }
 
+.cb-mascot {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  flex-shrink: 0;
+}
+
+.cb-mascot-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cb-greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cb-greeting-title {
+  margin: 0;
+  font-family: var(--font-heading), system-ui, sans-serif;
+  font-size: var(--font-size-6);
+  font-weight: 600;
+  line-height: var(--heading-line-height-6);
+  letter-spacing: var(--letter-spacing-6);
+  text-wrap: balance;
+}
+
+/* The gradient holds two blue → pink cycles, each the text's width, so the
+   sweep moves a full cycle and lands on the fill it rests with */
+.cb-gradient-text {
+  background: linear-gradient(90deg, #2657E8, #CF3897, #2657E8, #CF3897);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.cb-greeting-subtitle,
+.cb-intro-scope {
+  max-width: 400px;
+  margin: 0;
+  text-wrap: balance;
+}
+
 /* Sits in the line of text, so it stays with the first word when the note wraps */
-.ca-intro-scope .uic {
+.cb-intro-scope .uic {
   margin-right: 4px;
   vertical-align: -1px;
   color: var(--gray-9);
 }
 
-@keyframes ca-rise {
-  from { opacity: 0; translate: 0 14px; }
-  to   { opacity: 1; translate: 0 0; }
-}
-
-@keyframes ca-gradient-sweep {
-  from { background-position: 100% 0; }
-  to   { background-position: 0% 0; }
-}
-
-.ca-message {
+.cb-message {
   display: flex;
-  animation: ca-bubble-in 240ms ease-out both;
 }
 
-.ca-message--you {
+/* Only messages added while the panel is open; earlier ones arrive with the thread */
+.cb-message--new {
+  animation: cb-bubble-in 240ms ease-out both;
+}
+
+.cb-message--you {
   justify-content: flex-end;
 }
 
-.ca-bubble {
+.cb-bubble {
   max-width: 88%;
   padding: 8px 12px;
   border: 0.5px solid var(--gray-4);
@@ -1560,7 +1750,7 @@ button:focus-visible,
   line-height: 1.5;
 }
 
-.ca-message--you .ca-bubble {
+.cb-message--you .cb-bubble {
   border: 0;
   border-radius: 16px 16px 4px 16px;
   background: var(--color-accent);
@@ -1568,63 +1758,63 @@ button:focus-visible,
   white-space: pre-line;
 }
 
-.ca-bubble p,
-.ca-bubble ul {
+.cb-bubble p,
+.cb-bubble ul {
   margin: 0;
 }
 
 /* :not() lifts this above the margin reset on p and ul */
-.ca-bubble > :not(:first-child) {
+.cb-bubble > :not(:first-child) {
   margin-top: 8px;
 }
 
-.ca-bubble ul {
+.cb-bubble ul {
   padding-left: 18px;
   list-style: disc;
 }
 
-.ca-bubble li::marker {
+.cb-bubble li::marker {
   color: var(--gray-9);
 }
 
-.ca-bubble li + li {
+.cb-bubble li + li {
   margin-top: 4px;
 }
 
-.ca-restricted {
+.cb-restricted {
   gap: 4px;
 }
 
-.ca-thinking {
+.cb-thinking {
   display: flex;
   gap: 4px;
   padding: 12px 14px;
 }
 
-.ca-thinking span {
+.cb-thinking span {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--gray-8);
-  animation: ca-think 1.2s ease-in-out infinite;
+  animation: cb-think 1.2s ease-in-out infinite;
 }
 
-.ca-thinking span:nth-child(2) { animation-delay: 150ms; }
-.ca-thinking span:nth-child(3) { animation-delay: 300ms; }
+.cb-thinking span:nth-child(2) { animation-delay: 150ms; }
+.cb-thinking span:nth-child(3) { animation-delay: 300ms; }
 
-@keyframes ca-bubble-in {
+@keyframes cb-bubble-in {
   from { opacity: 0; translate: 0 8px; }
   to   { opacity: 1; translate: 0 0; }
 }
 
-@keyframes ca-think {
+@keyframes cb-think {
   0%, 60%, 100% { translate: 0 0;    opacity: 0.45; }
   30%           { translate: 0 -4px; opacity: 1; }
 }
 
 /* Suggested questions: one row that scrolls sideways, bleeding to the
-   sheet's edges so pills slide out from under them rather than being cut */
-.ca-prompts {
+   panel's edges so pills slide out from under them rather than being cut */
+.cb-prompts {
   display: flex;
   gap: 8px;
   margin: 0 -16px;
@@ -1634,11 +1824,11 @@ button:focus-visible,
   scrollbar-width: none;
 }
 
-.ca-prompts::-webkit-scrollbar {
+.cb-prompts::-webkit-scrollbar {
   display: none;
 }
 
-.ca-prompt {
+.cb-prompt {
   flex-shrink: 0;
   min-height: 32px;
   padding: 6px 12px;
@@ -1652,30 +1842,30 @@ button:focus-visible,
   transition: background-color 150ms ease;
 }
 
-.ca-prompt:hover:not(:disabled) {
+.cb-prompt:hover:not(:disabled) {
   background: var(--gray-4);
 }
 
-.ca-prompt:active:not(:disabled) {
+.cb-prompt:active:not(:disabled) {
   transform: scale(0.97);
 }
 
-.ca-prompt:disabled {
+.cb-prompt:disabled {
   opacity: 0.5;
   cursor: default;
 }
 
-.ca-prompt:focus-visible {
+.cb-prompt:focus-visible {
   border-radius: 999px;
 }
 
 /* Composer: Org Space Manager's brand-gradient glow behind a borderless
    surface. Focus brightens the glow rather than drawing a ring inside it. */
-.ca-composer {
+.cb-composer {
   position: relative;
 }
 
-.ca-composer::before {
+.cb-composer::before {
   content: "";
   position: absolute;
   inset: 2px;
@@ -1686,11 +1876,11 @@ button:focus-visible,
   transition: opacity 200ms ease-in-out;
 }
 
-.ca-composer:focus-within::before {
+.cb-composer:focus-within::before {
   opacity: 0.5;
 }
 
-.ca-composer-surface {
+.cb-composer-surface {
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -1701,7 +1891,7 @@ button:focus-visible,
 }
 
 /* Grows with its text up to five lines, where supported */
-.ca-input {
+.cb-input {
   flex: 1;
   min-height: 32px;
   max-height: 112px;
@@ -1717,43 +1907,49 @@ button:focus-visible,
   field-sizing: content;
 }
 
-.ca-input::placeholder {
+.cb-input::placeholder {
   color: var(--gray-9);
 }
 
-.ca-send:not(:disabled) {
+.cb-send:not(:disabled) {
   background-image: linear-gradient(135deg, #2657E8, #CF3897);
 }
 
-.ca-send:focus-visible {
+.cb-send:focus-visible {
   border-radius: 999px;
 }
 
-/* The global reduced-motion rule zeroes durations but not delays; show
-   everything at once rather than popping in late */
+/* The global reduced-motion rule zeroes durations but not delays; without
+   motion everything is simply there, and the popover appears and goes at
+   its full size */
 @media (prefers-reduced-motion: reduce) {
-  /* The popover simply appears and disappears at its full size */
-  .ca-popover,
-  .ca-popover[data-state="closed"],
-  .ca-popover-panel,
-  .ca-popover[data-state="closed"] .ca-popover-panel {
+  .cb-fab,
+  .cb-popover,
+  .cb-popover[data-state="closed"],
+  .cb-popover-title,
+  .cb-popover[data-state="closed"] .cb-popover-title,
+  .cb-popover-title-icon,
+  .cb-popover[data-state="closed"] .cb-popover-title-icon,
+  .cb-popover-title-label,
+  .cb-popover[data-state="closed"] .cb-popover-title-label,
+  .cb-popover-sublabel,
+  .cb-popover-close,
+  .cb-popover[data-state="closed"] :is(.cb-popover-sublabel, .cb-popover-close, .cb-popover-body, .cb-popover-footer),
+  .cb-fresh .cb-mascot,
+  .cb-fresh .cb-greeting,
+  .cb-fresh .cb-gradient-text,
+  .cb-resumed .cb-thread,
+  .cb-surface .cb-prompt,
+  .cb-surface .cb-composer,
+  .cb-message--new {
     animation: none;
   }
 
-  .ca-popover-face {
+  .cb-popover-face {
     display: none;
   }
 
-  .ca-fab,
-  .ca-intro-title,
-  .ca-gradient-text,
-  .ca-intro-subtitle,
-  .ca-intro-scope,
-  .ca-message {
-    animation: none;
-  }
-
-  .ca-thinking span {
+  .cb-thinking span {
     animation: none;
     opacity: 0.7;
   }
@@ -2427,26 +2623,26 @@ button:focus-visible,
     padding-bottom: 8px;
   }
 
-  /* Campus assistant: the floating button becomes a 52px circle in the
+  /* Campus Buddy: the floating button becomes a 52px circle in the
      bottom-right corner, within thumb reach. The page keeps a dock that
      tall clear at its foot, so the button never sits on the card's
      actions: the first-screen budget ends above it, and when the content is
      taller than the screen the sticky actions pin above the dock instead of
      at the bottom edge. A scrim fades whatever scrolls through the dock. */
   :root {
-    --ca-dock: calc(52px + 16px + 12px + env(safe-area-inset-bottom));
+    --cb-dock: calc(52px + 16px + 12px + env(safe-area-inset-bottom));
   }
 
   .ds-main,
   .ds-main--long {
-    padding-bottom: var(--ca-dock);
+    padding-bottom: var(--cb-dock);
   }
 
   .ds-hero-actions {
-    bottom: var(--ca-dock);
+    bottom: var(--cb-dock);
   }
 
-  .ca-fab {
+  .cb-fab {
     right: 16px;
     bottom: calc(16px + env(safe-area-inset-bottom));
     width: 52px;
@@ -2456,46 +2652,46 @@ button:focus-visible,
   }
 
   /* The button keeps its accessible name through aria-label */
-  .ca-fab-label {
+  .cb-fab-label {
     display: none;
   }
 
-  .ca-fab-icon {
+  .cb-fab-icon {
     font-size: 22px;
   }
 
-  .ca-dock-scrim {
+  .cb-dock-scrim {
     display: block;
     position: fixed;
     right: 0;
     bottom: 0;
     left: 0;
     z-index: 39;
-    height: var(--ca-dock);
+    height: var(--cb-dock);
     background: linear-gradient(to top, rgba(238, 242, 247, 0.96) 45%, rgba(238, 242, 247, 0));
     pointer-events: none;
   }
 
   /* Bigger targets for thumbs, and 16px text so iOS doesn't zoom in on focus */
-  .ca-prompt {
+  .cb-prompt {
     min-height: 36px;
     font-size: 14px;
   }
 
-  .ca-input {
+  .cb-input {
     font-size: 16px;
   }
 
-  /* The card ends at the top of the Campus assistant's dock (below), so the
+  /* The card ends at the top of Campus Buddy's dock (below), so the
      fine print hangs from there, and its padding lets it scroll up clear of
      the button */
   .ds-main--long .ds-footnote {
     position: absolute;
-    top: calc(100% - var(--ca-dock));
+    top: calc(100% - var(--cb-dock));
     right: 12px;
     left: 12px;
     margin-top: 4px;
-    padding-bottom: var(--ca-dock);
+    padding-bottom: var(--cb-dock);
   }
 
   .ds-info-grid {

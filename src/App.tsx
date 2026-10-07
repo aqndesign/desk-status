@@ -9,7 +9,7 @@ import {
   Grid,
 } from '@radix-ui/themes';
 import { BottomSheet } from './components/BottomSheet';
-import { CampusAssistant } from './components/CampusAssistant';
+import { CampusBuddy } from './components/CampusBuddy';
 import { CriteriaBreakdown } from './components/CriteriaBreakdown';
 import { DebugScenarioSwitcher, type Scenario } from './components/DebugScenarioSwitcher';
 import { DeskGauge } from './components/GaugeChart';
@@ -219,7 +219,7 @@ export default function App() {
       </main>
 
       {/* A fresh conversation for each person */}
-      <CampusAssistant key={employee.id} viewer={viewer} />
+      <CampusBuddy key={employee.id} viewer={viewer} />
 
       {/* Debug only: switches between the preview use cases */}
       <DebugScenarioSwitcher scenarios={SCENARIOS} value={selectedId} onValueChange={setSelectedId} />

@@ -1,5 +1,5 @@
 /**
- * Who may ask the Campus assistant about what.
+ * Who may ask Campus Buddy about what.
  *
  * Employees get answers about their own outcome and the policy that produced
  * it. Anything about the wider org — how its space is used, and who was

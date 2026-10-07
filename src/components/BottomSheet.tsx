@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Dialog } from 'radix-ui';
 import { Theme, Flex, Box, Heading, Text, IconButton } from '@radix-ui/themes';
 import { Icon } from './ui/Icon';
@@ -13,6 +13,10 @@ interface BottomSheetProps {
   footer?: ReactNode;
   /** Extra class on the sheet, for variants such as a fixed height */
   className?: string;
+  /** Inline style on the sheet, e.g. custom properties for a variant */
+  style?: CSSProperties;
+  /** Called as the sheet opens and closes */
+  onOpenChange?: (open: boolean) => void;
   /** Where focus goes on open; call `event.preventDefault()` to move it yourself */
   onOpenAutoFocus?: (event: Event) => void;
 }
@@ -20,9 +24,11 @@ interface BottomSheetProps {
 /* Radix Themes has no sheet, so this builds on the Dialog primitive, which
    supplies the focus trap, Escape / outside-click dismissal, scroll lock and
    ARIA wiring. Styling lives in globals.css under "Bottom sheet". */
-export function BottomSheet({ trigger, title, description, children, footer, className, onOpenAutoFocus }: BottomSheetProps) {
+export function BottomSheet({
+  trigger, title, description, children, footer, className, style, onOpenChange, onOpenAutoFocus,
+}: BottomSheetProps) {
   return (
-    <Dialog.Root>
+    <Dialog.Root onOpenChange={onOpenChange}>
       <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="bottom-sheet-overlay" />
@@ -31,7 +37,7 @@ export function BottomSheet({ trigger, title, description, children, footer, cla
             content element rather than a wrapper around it: the portal only
             waits for an exit animation on its direct children. */}
         <Dialog.Content asChild onOpenAutoFocus={onOpenAutoFocus}>
-          <Theme className={className ? `bottom-sheet ${className}` : 'bottom-sheet'}>
+          <Theme className={className ? `bottom-sheet ${className}` : 'bottom-sheet'} style={style}>
             <Flex justify="between" align="start" gap="4" className="bottom-sheet-header">
               <Box>
                 <Dialog.Title asChild>
